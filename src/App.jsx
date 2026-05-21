@@ -800,7 +800,7 @@ const handleChartPlanetClick = (p, lagnaIndex, onSymbolClick, chartType, allPlan
     
     if (chartType === 'natal' || chartType === 'transit') {
         const safeDeg = (p.fullDegree % 360 + 360) % 360; 
-        const nakExact = safeDeg / (40 / 3);handleGoogleLogin
+        const nakExact = safeDeg / (40 / 3);
         const nakIndex = Math.floor(nakExact);
         const nakName = String(safeStr(AstroEngine.NAKSHATRAS[nakIndex], ','));
         const pada = Math.floor((nakExact - nakIndex) * 4) + 1;
@@ -924,17 +924,18 @@ const UniversalGateway = ({ onSelectPath }) => {
         <p className="text-slate-600 text-lg italic">"Wisdom for everyone, regardless of birth details."</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-        {/* PATH 1: NATAL */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16 w-full">
+        
+        {/* PATH 1: VEDICASTRO ORIGINAL APP */}
         <button 
           onClick={() => onSelectPath('natal', false)}
           className="group bg-white p-8 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all border-2 border-slate-100 hover:border-emerald-500 text-left"
         >
           <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🕉️</div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Natal Analysis</h3>
-          <p className="text-slate-500 mb-6 text-sm">Requires birth details. Saves to your secure profile.</p>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">VedicAstro</h3>
+          <p className="text-slate-500 mb-6 text-sm">Original natal analysis app. Requires birth details and saves to your secure profile.</p>
           <div className="text-emerald-600 font-bold flex items-center gap-1">
-            Start Journey <span>→</span>
+            Launch VedicAstro <span>→</span>
           </div>
         </button>
 
@@ -950,12 +951,39 @@ const UniversalGateway = ({ onSelectPath }) => {
             Enter Guest Mode <span>→</span>
           </div>
         </button>
-      </div>
-
+        
+        {/* PATH 3: ASTROWATCH (EXTERNAL APP) */}
+        <button
+          onClick={() => window.open('https://drpsdeb.github.io/AstroWatch-drpsdeb/', '_blank')}
+          className="group bg-white p-8 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-sky-100 flex flex-col text-left"
+        >
+          <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🔭</div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">AstroWatch</h3>
+          <p className="text-slate-500 mb-6 text-sm flex-grow">Track real-time planetary transits, dynamic muhurtas, and celestial events.</p>
+          <div className="text-sky-600 font-bold flex items-center gap-1 mt-auto">
+            Launch App <span>→</span>
+          </div>
+        </button>
+      
+        {/* PATH 4: ASTROMATCH (DVADASHA KOOT MILAN) */}
+        <button
+          onClick={() => onSelectPath('match', false)}
+          className="group bg-white p-8 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all border-2 border-amber-100 hover:border-amber-400 text-left flex flex-col min-h-[320px]"
+        >
+          <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">💕</div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">AstroMatch</h3>
+          <p className="text-slate-500 mb-6 text-sm flex-grow">
+            Dvadasha Koot Milan engine. Comprehensive 50-point compatibility analysis with automated Rajju & Nadi Dosha detection.
+          </p>
+          <div className="text-amber-600 font-bold flex items-center gap-1 mt-auto">
+            Match Profiles <span>→</span>
+          </div>
+        </button>
+        </div>
       <div className="border-t pt-10 text-center">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Future Modules</p>
         <div className="flex flex-wrap justify-center gap-3 opacity-50">
-          {['Matching', 'KP System', 'Nadi', 'Astrowatch', 'Gemini AI'].map(item => (
+          {['KP System', 'Nadi', 'Jaimini'].map(item => (
             <span key={item} className="px-4 py-2 bg-slate-200 rounded-full text-[10px] font-bold">{item}</span>
           ))}
         </div>
@@ -968,6 +996,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeModule, setActiveModule] = useState(null); // Controls Landing Page vs App
   const [isGuestMode, setIsGuestMode] = useState(false);  // Bypasses Firebase
+  const [selectedBoy, setSelectedBoy] = useState("");
+  const [selectedGirl, setSelectedGirl] = useState("");
+  const [matchResult, setMatchResult] = useState(null);
   const handleSaveToDatabase = async (data) => {
     // --- 🛡️ GUEST MODE CHECK ---
     if (isGuestMode) {
@@ -1013,6 +1044,118 @@ const onSelectPath = (path, guest) => {
     }
     return [{ name: "Master Key", dob: "1954-10-29", tob: "10:50", lat: 22.5, lon: 88.3, tz: 5.5 }];
   });
+
+  const getMatchMoonData = useCallback((profile) => {
+    if (!profile?.dob) return null;
+
+    const timeStr = profile.time || profile.tob || '12:00';
+    const tz = Number(profile.tzone ?? profile.tz ?? 5.5);
+    const lat = Number(profile.lat ?? 17.3850);
+    const lon = Number(profile.lon ?? 78.4867);
+    const [y, m, d] = String(profile.dob).split('-').map(Number);
+    const [hr, min] = String(timeStr).split(':').map(Number);
+
+    if (![y, m, d, hr, min, tz, lat, lon].every(Number.isFinite)) return null;
+
+    const birthDate = new Date(Date.UTC(y, m - 1, d, hr, min) - (tz * 3600000));
+    const positions = OfflineEphemeris.getPositions(birthDate, lat, lon);
+    const moon = positions.planets.find(p => p.planet === 'Moon');
+    if (!moon) return null;
+
+    const nakSize = 40 / 3;
+    const nakExact = moon.fullDegree / nakSize;
+    const nakIndex = Math.floor(nakExact) % 27;
+
+    return {
+      degree: moon.fullDegree,
+      rasiIndex: moon.rasiIndex,
+      rasi: safeStr(AstroEngine.SIDEREAL_RASIS[moon.rasiIndex], ' ') || AstroEngine.SIDEREAL_RASIS[moon.rasiIndex],
+      nakIndex,
+      nakshatra: AstroEngine.NAKSHATRAS[nakIndex],
+      pada: Math.floor((nakExact - Math.floor(nakExact)) * 4) + 1
+    };
+  }, []);
+
+  const handleCalculateMatch = useCallback(() => {
+    const boy = savedProfiles.find(p => p?.name === selectedBoy);
+    const girl = savedProfiles.find(p => p?.name === selectedGirl);
+
+    if (!boy || !girl) {
+      alert("Please select both profiles for AstroMatch.");
+      return;
+    }
+
+    const boyMoon = getMatchMoonData(boy);
+    const girlMoon = getMatchMoonData(girl);
+
+    if (!boyMoon || !girlMoon) {
+      alert("Unable to calculate one of the Moon positions. Please check date, time, latitude, longitude, and timezone in both profiles.");
+      return;
+    }
+
+    const nakDistance = (from, to) => ((to - from + 27) % 27) + 1;
+    const rasiDistance = (from, to) => ((to - from + 12) % 12) + 1;
+    const boyFromGirlNak = nakDistance(girlMoon.nakIndex, boyMoon.nakIndex);
+    const boyFromGirlRasi = rasiDistance(girlMoon.rasiIndex, boyMoon.rasiIndex);
+    const girlFromBoyRasi = rasiDistance(boyMoon.rasiIndex, girlMoon.rasiIndex);
+
+    const gana = ['Deva','Manushya','Rakshasa','Manushya','Manushya','Manushya','Deva','Deva','Rakshasa','Rakshasa','Manushya','Manushya','Deva','Rakshasa','Deva','Rakshasa','Deva','Rakshasa','Rakshasa','Manushya','Manushya','Deva','Rakshasa','Rakshasa','Manushya','Manushya','Deva'];
+    const rajju = ['Pada','Kati','Nabhi','Kantha','Shira','Kantha','Nabhi','Kati','Pada','Pada','Kati','Nabhi','Kantha','Shira','Kantha','Nabhi','Kati','Pada','Pada','Kati','Nabhi','Kantha','Shira','Kantha','Nabhi','Kati','Pada'];
+    const nadi = (idx) => idx % 3;
+    const varnaRank = [3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 4];
+    const vedhaPairs = [[0,18],[1,17],[2,16],[3,15],[4,23],[5,22],[6,21],[7,20],[8,19],[9,26],[10,25],[11,24]];
+    const vedhaBad = vedhaPairs.some(([a, b]) => (
+      (boyMoon.nakIndex === a && girlMoon.nakIndex === b) ||
+      (boyMoon.nakIndex === b && girlMoon.nakIndex === a)
+    ));
+
+    const lords = AstroEngine.RASHI_LORDS;
+    const friendships = {
+      Sun: ['Moon', 'Mars', 'Jupiter'],
+      Moon: ['Sun', 'Mercury'],
+      Mars: ['Sun', 'Moon', 'Jupiter'],
+      Mercury: ['Sun', 'Venus'],
+      Jupiter: ['Sun', 'Moon', 'Mars'],
+      Venus: ['Mercury', 'Saturn'],
+      Saturn: ['Mercury', 'Venus']
+    };
+    const boyLord = lords[boyMoon.rasiIndex];
+    const girlLord = lords[girlMoon.rasiIndex];
+    const areFriends = boyLord === girlLord || friendships[boyLord]?.includes(girlLord) || friendships[girlLord]?.includes(boyLord);
+
+    const badBhakoot = (
+      (boyFromGirlRasi === 2 && girlFromBoyRasi === 12) ||
+      (boyFromGirlRasi === 12 && girlFromBoyRasi === 2) ||
+      (boyFromGirlRasi === 6 && girlFromBoyRasi === 8) ||
+      (boyFromGirlRasi === 8 && girlFromBoyRasi === 6) ||
+      (boyFromGirlRasi === 5 && girlFromBoyRasi === 9) ||
+      (boyFromGirlRasi === 9 && girlFromBoyRasi === 5)
+    );
+
+    const scores = {
+      dina: [2, 4, 6, 8, 9].includes(boyFromGirlNak % 9 || 9) ? 3 : 0,
+      gana: gana[boyMoon.nakIndex] === gana[girlMoon.nakIndex] ? 6 : (gana[boyMoon.nakIndex] === 'Rakshasa' || gana[girlMoon.nakIndex] === 'Rakshasa' ? 1 : 5),
+      yoni: boyMoon.nakIndex === girlMoon.nakIndex ? 4 : (Math.abs(boyMoon.nakIndex - girlMoon.nakIndex) % 3 === 0 ? 3 : 2),
+      bhakoot: badBhakoot ? 0 : 7,
+      maitri: areFriends ? 2 : 1,
+      rajju: rajju[boyMoon.nakIndex] === rajju[girlMoon.nakIndex] ? 0 : 7,
+      vedha: vedhaBad ? 0 : 3,
+      vashya: boyMoon.rasiIndex === girlMoon.rasiIndex || Math.abs(boyMoon.rasiIndex - girlMoon.rasiIndex) === 1 ? 2 : 1,
+      mahendra: [4, 7, 10, 13, 16, 19, 22, 25].includes(boyFromGirlNak) ? 4 : 0,
+      striDirgha: boyFromGirlNak >= 14 ? 3 : 0,
+      nadi: nadi(boyMoon.nakIndex) === nadi(girlMoon.nakIndex) ? 0 : 8,
+      varna: varnaRank[boyMoon.rasiIndex] >= varnaRank[girlMoon.rasiIndex] ? 1 : 0
+    };
+
+    setMatchResult({
+      boy,
+      girl,
+      boyMoon,
+      girlMoon,
+      scores,
+      totalScore: Object.values(scores).reduce((sum, score) => sum + score, 0)
+    });
+  }, [getMatchMoonData, savedProfiles, selectedBoy, selectedGirl]);
 
   // 🔐 GOOGLE SIGN-IN FUNCTION
   const handleGoogleLogin = () => {
@@ -1314,6 +1457,34 @@ const generatePrashnaChart = () => {
       }
     }
   }, [userData]);
+
+// Fetch real-time IP location for Prashna when entering Guest Mode
+  useEffect(() => {
+    if (isGuestMode) {
+      fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(data => {
+          console.log("Guest Location synced:", data.city);
+          
+          // Update the Prashna Chart Data state with real-time location
+          // Update the main UserData state so the UI and Prashna math see it
+          setUserData(prev => ({
+            ...prev,
+            formData: {
+              ...prev?.formData,
+              currentCity: data.city,
+              city: data.city,
+              currentLat: data.latitude,
+              currentLon: data.longitude,
+              currentTzone: parseFloat(data.utc_offset) || 5.5
+            }
+          }));
+          }) // <--- Make sure this line closes the .then block cleanly before the .catch
+        .catch(error => {
+          console.error("Could not fetch IP location:", error);
+        });
+    }
+  }, [isGuestMode]);
 
   const handleSaveProfile = async (formData) => {
     if (!formData || !formData.name) return;
@@ -1666,6 +1837,168 @@ RULES FOR THIS READING:
 
           {/* WRAP YOUR OLD CONTENT HERE */}
           <div className="flex-1">
+            {/* 🏹 ASTROMATCH VIEW MODULE ROUTE */}
+          {activeModule === 'match' && (
+            <div className="max-w-4xl mx-auto p-6 bg-[#fdfde8] text-slate-800 rounded-3xl shadow-xl border border-amber-200/60 mt-4 mb-12">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-extrabold text-amber-900 tracking-tight">DVADASHA KOOT MILAN</h1>
+                <p className="text-sm text-amber-700/80 italic mt-1">Advanced 50-Point Compatibility Analysis Engine</p>
+              </div>
+
+              {/* Profile Dropdown Selection Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Boy Selection Card */}
+                <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
+                  <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">👦 Boy's Profile Selection</label>
+                  <select
+                    value={selectedBoy || ""}
+                    onChange={(e) => setSelectedBoy(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">-- Choose Boy Profile --</option>
+                    {savedProfiles.map(p => <option key={p.id || p.name} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+
+                {/* Girl Selection Card */}
+                <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
+                  <label className="block text-xs font-bold text-pink-800 uppercase tracking-wider mb-2">👧 Girl's Profile Selection</label>
+                  <select
+                    value={selectedGirl || ""}
+                    onChange={(e) => setSelectedGirl(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-pink-500"
+                  >
+                    <option value="">-- Choose Girl Profile --</option>
+                    {savedProfiles.map(p => <option key={p.id || p.name} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Engine Trigger */}
+              <div className="text-center mb-8">
+                <button
+                  onClick={handleCalculateMatch}
+                  disabled={!selectedBoy || !selectedGirl}
+                  className="w-full max-w-sm px-8 py-4 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-2xl shadow-lg transition-all transform active:scale-[0.98] tracking-wide uppercase text-sm"
+                >
+                  Calculate Compatibility Score
+                </button>
+              </div>
+
+              {/* 📊 DYNAMIC 12-KOOT SCOREBOARD DISPLAYER */}
+              {matchResult && matchResult.scores && (
+                <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  
+                  {/* Sync Details Subheader Overview */}
+                  <div className="grid grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-amber-100 mb-6 shadow-sm text-sm">
+                    <div className="border-r border-slate-100 pr-2">
+                      <p className="font-bold text-blue-800">👦 {matchResult.boy.name}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">✨ Rasi: <span className="font-semibold">{matchResult.boyMoon.rasi}</span></p>
+                      <p className="text-xs text-slate-600">⭐ Nakshatra: <span className="font-bold text-blue-700">{matchResult.boyMoon.nakshatra}</span> (P-{matchResult.boyMoon.pada})</p>
+                    </div>
+                    <div className="pl-2">
+                      <p className="font-bold text-pink-800">👧 {matchResult.girl.name}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">✨ Rasi: <span className="font-semibold">{matchResult.girlMoon.rasi}</span></p>
+                      <p className="text-xs text-slate-600">⭐ Nakshatra: <span className="font-bold text-pink-700">{matchResult.girlMoon.nakshatra}</span> (P-{matchResult.girlMoon.pada})</p>
+                    </div>
+                  </div>
+
+                  {/* Comprehensive Total Performance Badge */}
+                  <div className="text-center mb-6 bg-white p-4 rounded-2xl border border-amber-200 inline-block mx-auto w-full max-w-xs shadow-sm block">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Harmony Points</p>
+                    <p className={`text-4xl font-extrabold mt-1 ${matchResult.totalScore >= 25 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {matchResult.totalScore} <span className="text-lg font-normal text-slate-300">/ 50</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                      {matchResult.totalScore >= 25 ? "✅ Safe Marital Accord" : "⚠️ Structural Evaluation Warning"}
+                    </p>
+                  </div>
+
+                  {/* 12-Row Metrics Calculation Grid */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-800 text-white text-xs uppercase font-semibold tracking-wider">
+                          <th className="p-3 pl-4">Koot Parameters</th>
+                          <th className="p-3">Max</th>
+                          <th className="p-3 text-right pr-4">Obtained</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-slate-700 divide-y divide-slate-100 text-xs">
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">1. Dina / Tara <span className="text-[10px] text-slate-400 font-normal ml-1">(Longevity Metric)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">3</td>
+                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.dina === 0 ? 'text-rose-600' : 'text-slate-900'}`}>{matchResult.scores.dina}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">2. Gana <span className="text-[10px] text-slate-400 font-normal ml-1">(Temperament Match)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">6</td>
+                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.gana === 0 ? 'text-rose-600' : 'text-slate-900'}`}>{matchResult.scores.gana}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">3. Yoni <span className="text-[10px] text-slate-400 font-normal ml-1">(Innate Subconscious Nature)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">4</td>
+                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.yoni}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">4. Rasi / Bhakoot <span className="text-[10px] text-slate-400 font-normal ml-1">(Emotional Growth Matrix)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">7</td>
+                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.bhakoot === 0 ? 'text-rose-600' : 'text-slate-900'}`}>{matchResult.scores.bhakoot}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">5. Graha Maitri <span className="text-[10px] text-slate-400 font-normal ml-1">(Psychological Synergy)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">2</td>
+                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.maitri}</td>
+                        </tr>
+                        <tr className={matchResult.scores.rajju === 0 ? "bg-rose-50/40" : ""}>
+                          <td className="p-3 pl-4 font-medium">6. Rajju <span className="text-[10px] text-rose-600 font-bold ml-1">(Absolute Vital Life-Tie Filter)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">7</td>
+                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.rajju === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                            {matchResult.scores.rajju} {matchResult.scores.rajju === 0 && '❌ Dosha'}
+                          </td>
+                        </tr>
+                        <tr className={matchResult.scores.vedha === 0 ? "bg-rose-50/40" : ""}>
+                          <td className="p-3 pl-4 font-medium">7. Vedha <span className="text-[10px] text-rose-600 font-bold ml-1">(Inimical Piercing Afflictions)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">3</td>
+                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.vedha === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                            {matchResult.scores.vedha} {matchResult.scores.vedha === 0 && '❌ Dosha'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">8. Vashya <span className="text-[10px] text-slate-400 font-normal ml-1">(Mutual Magnetic Attraction)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">2</td>
+                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.vashya}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">9. Mahendra <span className="text-[10px] text-slate-400 font-normal ml-1">(Lineage & Long-term Wealth)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">4</td>
+                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.mahendra}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">10. Stri-Dirgha <span className="text-[10px] text-slate-400 font-normal ml-1">(Auspicious Family Well-being)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">3</td>
+                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.striDirgha}</td>
+                        </tr>
+                        <tr className={matchResult.scores.nadi === 0 ? "bg-rose-50/40" : ""}>
+                          <td className="p-3 pl-4 font-medium">11. Nadi <span className="text-[10px] text-rose-600 font-bold ml-1">(Genetic / Physiological Constitution)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">8</td>
+                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.nadi === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                            {matchResult.scores.nadi} {matchResult.scores.nadi === 0 && '❌ Dosha'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 pl-4 font-medium">12. Varna <span className="text-[10px] text-slate-400 font-normal ml-1">(Ego & Social Alignment)</span></td>
+                          <td className="p-3 font-semibold text-slate-400">1</td>
+                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.varna}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )}
              {/* 
                    <div className={`min-h-screen bg-[#ececd6] text-slate-800 font-sans flex flex-col items-center overflow-x-hidden pt-12 md:pt-10`}>
                       
@@ -1742,6 +2075,7 @@ RULES FOR THIS READING:
                       <div className="w-full max-w-[1500px] mx-auto px-4 pt-6 md:pt-10 flex flex-col items-center">
                         
                         {/* TOP BAR */}
+                        {!isGuestMode && (
                         <div className="w-full bg-[#fdfde8] p-2 text-xs border border-slate-300 flex justify-between items-center shadow-sm z-10 font-serif font-bold text-green-900 rounded-lg mb-6 shrink-0">
                           <div className="flex items-center gap-2">
                             <Cloud size={16} className="text-blue-500" />
@@ -1753,13 +2087,14 @@ RULES FOR THIS READING:
                           </div>
                           <span className="hidden md:inline text-right opacity-80 truncate pl-4">{String(userData.formData.dob)} {String(userData.formData.time)} | Birth: {String(userData.formData.city)}</span>
                         </div>
-                
+                        )}
                         {/* ADVANCED 4-COLUMN RESPONSIVE GRID SYSTEM */}
                         <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 xl:grid-cols-4 gap-6 items-stretch">
                             
                             {/* 1A. MAIN CHART (Row 1 Left) */}
                             <div className={isExpert ? "col-span-1 md:col-span-2 lg:col-span-4 lg:col-start-1 lg:row-start-1 xl:col-span-2 xl:col-start-1 xl:row-start-1" : "col-span-1 md:col-span-2 lg:col-span-4 xl:col-span-3"}>
                                 <div className="flex flex-col items-center justify-center gap-2 w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-full">
+                                  {!isGuestMode && (
                                     <div className="flex bg-slate-200 rounded-full p-1 text-[10px] md:text-xs font-bold mb-2 overflow-x-auto max-w-full">
                                         <button onClick={()=>setViewMode('natal')} className={`px-4 md:px-6 py-2 rounded-full whitespace-nowrap transition-colors ${viewMode==='natal'?'bg-amber-600 text-white shadow':'text-slate-600 hover:bg-slate-300'}`}>Natal (D1)</button>
                                         <button onClick={()=>setViewMode('transit')} className={`px-4 md:px-6 py-2 rounded-full whitespace-nowrap transition-colors ${viewMode==='transit'?'bg-indigo-600 text-white shadow':'text-slate-600 hover:bg-slate-300'}`}>Transits</button>
@@ -1769,7 +2104,7 @@ RULES FOR THIS READING:
                                         
                                         {isExpert && <button onClick={()=>setViewMode('sav')} className={`px-4 md:px-6 py-2 rounded-full whitespace-nowrap transition-colors flex items-center gap-1 ${viewMode==='sav'?'bg-purple-600 text-white shadow':'text-slate-600 hover:bg-slate-300'}`}><Star size={12}/> SAV</button>}
                                     </div>
-                                    
+                                    )}
                                    {/* PRASHNA FORM OR ACTUAL CHARTS */}
                 {viewMode === 'prashna' ? (
                   showPrashnaChart && prashnaChartData ? (
@@ -1796,10 +2131,26 @@ RULES FOR THIS READING:
                               </div>
                           </div>
                                  
-                                 {isSouthIndian ? 
-                                    <SouthIndianChart planets={prashnaChartData.planets} lagnaIndex={prashnaChartData.lagnaIndex} onSymbolClick={handleSymbolClick} chartType="prashna" viewMode="prashna" avData={null} /> : 
-                                    <NorthIndianChart planets={prashnaChartData.planets} lagnaIndex={prashnaChartData.lagnaIndex} onSymbolClick={handleSymbolClick} chartType="prashna" viewMode="prashna" avData={null} />
-                                 }
+                                 {isSouthIndian ? (
+                                  <SouthIndianChart 
+                                    planets={prashnaChartData.planets} 
+                                    lagnaIndex={prashnaChartData.lagnaIndex} 
+                                    onSymbolClick={handleSymbolClick} 
+                                    chartType="prashna" 
+                                    viewMode="prashna"
+                                    avData={null}
+                                  />
+                                 ) : (
+                                  <NorthIndianChart 
+                                    planets={prashnaChartData.planets} 
+                                    lagnaIndex={prashnaChartData.lagnaIndex} 
+                                    onSymbolClick={handleSymbolClick} 
+                                    chartType="prashna" 
+                                    viewMode="prashna"
+                                    avData={null}
+                                  />
+                                 )}
+                                 
                             </div>
                         ) : (
                     <div className="w-full max-w-md mx-auto flex flex-col gap-5 mt-2 mb-4 text-left">
@@ -1909,16 +2260,32 @@ RULES FOR THIS READING:
                                 <span>GENERATE PRASHNA CHART</span> <span>✨</span>
                             </button>
                         </div>
-                )) : isSouthIndian ?
-                
-                                        <SouthIndianChart planets={viewMode === 'natal' ? natalPlanets : transits} lagnaIndex={lagnaIndex} onSymbolClick={handleSymbolClick} chartType={viewMode === 'natal' ? 'natal' : (viewMode === 'transit' ? 'transit' : 'sav')} viewMode={viewMode} avData={ashtakavargaData} /> : 
-                                        <NorthIndianChart planets={viewMode === 'natal' ? natalPlanets : transits} lagnaIndex={lagnaIndex} onSymbolClick={handleSymbolClick} chartType={viewMode === 'natal' ? 'natal' : (viewMode === 'transit' ? 'transit' : 'sav')} viewMode={viewMode} avData={ashtakavargaData} />
-                                    }
+                )) : isSouthIndian ? (
+                  <SouthIndianChart 
+                    planets={viewMode === 'natal' ? natalPlanets : transits} 
+                    lagnaIndex={lagnaIndex} 
+                    onSymbolClick={handleSymbolClick}
+                    chartType={viewMode === 'natal' ? 'natal' : (viewMode === 'transit' ? 'transit' : 'sav')}
+                    chartType={viewMode === 'natal' ? 'natal' : (viewMode === 'transit' ? 'transit' : 'sav')} 
+                    viewMode={viewMode}
+                    avData={ashtakavargaData}
+                  />
+                ) : (
+                  <NorthIndianChart 
+                    planets={viewMode === 'natal' ? natalPlanets : transits} 
+                    lagnaIndex={lagnaIndex} 
+                    onSymbolClick={handleSymbolClick} 
+                    chartType={viewMode === 'natal' ? 'natal' : (viewMode === 'transit' ? 'transit' : 'sav')} 
+                    viewMode={viewMode}
+                    avData={ashtakavargaData}
+                  />
+                )}
                                 </div>
                             </div>
+                              
                 
                             {/* 1B. SUB CHARTS (Row 2 Left) */}
-                            {isExpert && (
+                            {isExpert && !isGuestMode && (
                             <div className="col-span-1 md:col-span-2 lg:col-span-4 lg:col-start-1 lg:row-start-2 xl:col-span-2 xl:col-start-1 xl:row-start-2">
                                 <div className="flex flex-col items-center justify-center gap-2 w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-full">
                                     <div className="flex bg-slate-200 rounded-full p-1 text-[10px] md:text-xs font-bold w-full max-w-md overflow-x-auto no-scrollbar mb-2">
@@ -1935,6 +2302,8 @@ RULES FOR THIS READING:
                             </div>
                             )}
                 
+                            {!isGuestMode && (
+                <>
                             {/* 2. MID-TOP: Panchang & Functional Nature / Shadbala */}
                             {isExpert && (panchang || functionalNature) ? (
                             <div className="flex flex-col gap-6 col-span-1 md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-start-1 xl:col-span-1 xl:col-start-3 xl:row-start-1 h-full">
@@ -2159,8 +2528,7 @@ RULES FOR THIS READING:
                 
                           </div>
                         ) : null}
-                
-                
+                                
                             {/* 4. DETECTED YOGAS */}
                             {detectedYogas.length > 0 ? (
                             <div className="col-span-1 md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-start-2 xl:col-span-1 xl:col-start-3 xl:row-start-2 h-full">
@@ -2189,9 +2557,27 @@ RULES FOR THIS READING:
                             <div className={isExpert ? "col-span-1 md:col-span-1 lg:col-span-3 lg:col-start-4 lg:row-start-3 xl:col-span-1 xl:col-start-4 xl:row-start-2 h-full" : "col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-1 h-full"}>
                                 <div className="bg-white border-2 border-amber-300 rounded-2xl shadow-sm p-5 w-full flex flex-col h-full min-h-0">
                                     <div className="text-sm font-bold mb-4 text-amber-800 font-serif uppercase flex items-center gap-2 shrink-0"><MessageCircle size={16} /> Ask Parashari AI</div>
-                                    <div className="flex gap-2 mb-4 shrink-0">
-                                        <input type="text" placeholder="Ask a question about your chart..." className="flex-1 p-3 border border-slate-300 rounded-xl text-sm outline-none shadow-inner" value={qaInput} onChange={e => setQaInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAskAI()} />
-                                        <button onClick={() => handleAskAI()} disabled={qaLoading} className="bg-amber-600 text-white p-3 rounded-xl shadow-sm hover:bg-amber-700 transition-colors shrink-0"><Search size={18}/></button>
+                                    <div className="flex gap-2 items-start mb-4 shrink-0">
+                                        <textarea 
+                                            rows={3}
+                                            placeholder="Ask a question about your chart..." 
+                                            className="flex-1 p-3 border border-slate-300 rounded-xl text-sm outline-none shadow-inner resize-y"
+                                           value={qaInput}
+                                           onChange={(e) => setQaInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleAskAI();
+                                                }
+                                            }}
+                                        />
+                                        <button 
+                                            onClick={() => handleAskAI()} 
+                                            disabled={qaLoading} 
+                                            className="bg-amber-600 text-white p-3 rounded-xl shadow-sm hover:bg-amber-700 transition-colors mt-1"
+                                        >
+                                            <Search size={20} />
+                                        </button>
                                     </div>
                                     {qaLoading ? <div className="p-4 text-center text-amber-600 text-xs font-bold uppercase flex flex-col items-center gap-2 shrink-0"><Loader2 size={24} className="animate-spin"/> Consulting stars...</div> : null}
                                     {qaResult?.type === 'success' ? <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded shadow-inner overflow-y-auto"><p className="text-sm text-slate-800 font-serif italic whitespace-pre-wrap">{String(qaResult.text)}</p></div> : null}
@@ -2216,7 +2602,8 @@ RULES FOR THIS READING:
                                     </div>
                                 </div>
                             </div>
-                
+                </>
+    )}
                         </div>
                       </div>
                     </div>
