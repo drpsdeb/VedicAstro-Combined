@@ -1,8 +1,8 @@
 {
-  "name": "VedicAstro ",
+  "name": "vedicastro-combined",
   "private": true,
-  "version": "1.5.0",
-  "homepage": "https://drpsdeb.github.io/VedicAstro",
+  "version": "1.0.0",
+  "homepage": "https://drpsdeb.github.io/VedicAstro-Combined",
   "type": "module",
   "scripts": {
     "dev": "vite",
