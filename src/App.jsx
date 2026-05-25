@@ -817,15 +817,7 @@ const UniversalGateway = ({ onSelectPath }) => {
           </div>
         </button>
         </div>
-      <div className="border-t pt-10 text-center">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Future Modules</p>
-        <div className="flex flex-wrap justify-center gap-3 opacity-50">
-          {['KP System', 'Nadi', 'Jaimini'].map(item => (
-            <span key={item} className="px-4 py-2 bg-slate-200 rounded-full text-[10px] font-bold">{item}</span>
-          ))}
-        </div>
-      </div>
-      {/* Profile hub button placed at bottom */}
+      {/* Profile hub button placed above Future Modules */}
       <div className="mt-8 flex justify-center px-4">
         <button
           onClick={() => onSelectPath('profiles', false)}
@@ -841,6 +833,16 @@ const UniversalGateway = ({ onSelectPath }) => {
           </div>
         </button>
       </div>
+
+      <div className="border-t pt-10 text-center mt-12">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Future Modules</p>
+        <div className="flex flex-wrap justify-center gap-3 opacity-50">
+          {['KP System', 'Nadi', 'Jaimini'].map(item => (
+            <span key={item} className="px-4 py-2 bg-slate-200 rounded-full text-[10px] font-bold">{item}</span>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 };
