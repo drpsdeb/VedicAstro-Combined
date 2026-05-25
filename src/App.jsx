@@ -368,57 +368,36 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
                 className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <option value="">-- Select Role --</option>
-                {formData.category === 'Family' ? (
-                  <>
-                    <option value="Spouse">Spouse</option>
-                    <option value="Father">Father</option>
-                    <option value="Mother">Mother</option>
-                    <option value="Son">Son</option>
-                    <option value="Daughter">Daughter</option>
-                    <option value="Daughter-in-law">Daughter-in-law</option>
-                    <option value="Son-in-law">Son-in-law</option>
-                    <option value="Brother">Brother</option>
-                    <option value="Sister">Sister</option>
-                    <option value="Grandchild">Grandchild</option>
-                    <option value="Relative">Relative</option>
-                    <option value="Other">Other</option>
-                  </>
-                ) : formData.category === 'Friend' ? (
-                  <>
-                    <option value="Friend">Friend</option>
-                    <option value="Colleague">Colleague</option>
-                    <option value="Neighbor">Neighbor</option>
-                    <option value="Classmate">Classmate</option>
-                    <option value="Other">Other</option>
-                  </>
-                ) : formData.category === 'Patient' ? (
-                  <>
-                    <option value="Patient">Patient</option>
-                    <option value="Client">Client</option>
-                    <option value="Referral">Referral</option>
-                    <option value="Other">Other</option>
-                  </>
-                ) : formData.category === 'Facebook' ? (
-                  <>
-                    <option value="Social Contact">Social Contact</option>
-                    <option value="Online Friend">Online Friend</option>
-                    <option value="Follower">Follower</option>
-                    <option value="Other">Other</option>
-                  </>
-                ) : formData.category === 'Client' ? (
-                  <>
-                    <option value="Client">Client</option>
-                    <option value="Partner">Partner</option>
-                    <option value="Vendor">Vendor</option>
-                    <option value="Consultant">Consultant</option>
-                    <option value="Other">Other</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="Associate">Associate</option>
-                    <option value="Other">Other</option>
-                  </>
-                )}
+                <optgroup label="Family / Relatives">
+                  <option value="Spouse">Spouse</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Son">Son</option>
+                  <option value="Daughter">Daughter</option>
+                  <option value="Daughter-in-law">Daughter-in-law</option>
+                  <option value="Son-in-law">Son-in-law</option>
+                  <option value="Brother">Brother</option>
+                  <option value="Sister">Sister</option>
+                  <option value="Grandchild">Grandchild</option>
+                  <option value="Relative">Relative</option>
+                </optgroup>
+                <optgroup label="Social / Professional">
+                  <option value="Friend">Friend</option>
+                  <option value="Colleague">Colleague</option>
+                  <option value="Neighbor">Neighbor</option>
+                  <option value="Classmate">Classmate</option>
+                  <option value="Patient">Patient</option>
+                  <option value="Client">Client</option>
+                  <option value="Partner">Partner</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Social Contact">Social Contact</option>
+                  <option value="Online Friend">Online Friend</option>
+                  <option value="Follower">Follower</option>
+                  <option value="Vendor">Vendor</option>
+                  <option value="Consultant">Consultant</option>
+                  <option value="Associate">Associate</option>
+                </optgroup>
+                <option value="Other">Other</option>
               </select>
             </div>
           </div>
