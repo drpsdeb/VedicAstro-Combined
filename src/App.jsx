@@ -1602,16 +1602,28 @@ RULES FOR THIS READING:
   const detectedYogas = useMemo(() => (!isNaN(lagnaIndex) && natalPlanets.length > 0) ? AstroEngine.calculateYogas(natalPlanets, lagnaIndex) : [], [natalPlanets, lagnaIndex]);
   const ashtakavargaData = useMemo(() => (!isNaN(lagnaIndex) && natalPlanets.length > 0) ? AstroEngine.calculateAshtakavarga(natalPlanets, lagnaIndex) : null, [natalPlanets, lagnaIndex]);
 
-  // Only render the standalone BirthForm when user lacks data AND user explicitly opened Profiles
-  if ((!userData || !userData.formData) && activeModule === 'profiles') {
+  // Render the standalone BirthForm when user lacks data OR user explicitly opened Profiles
+  if (((!userData || !userData.formData) && !isGuestMode) || activeModule === 'profiles') {
     return (
       <div className="min-h-screen bg-slate-200 font-sans p-4 flex items-center justify-center">
         {profileManagerComponent}
-        <BirthForm onDeleteProfile={handleDeleteProfile} onGoogleLogin={handleGoogleLogin} onSaveProfile={handleSaveProfile} onStartApp={() => setActiveModule(null)} savedProfiles={sortedProfiles} isLoggedIn={!!auth?.currentUser} />
+        <BirthForm 
+          onDeleteProfile={handleDeleteProfile} 
+          onGoogleLogin={handleGoogleLogin} 
+          onSaveProfile={handleSaveProfile} 
+          onStartApp={(data) => { 
+            if (data?.formData) { 
+              setUserData(data); 
+            } 
+            setActiveModule('natal'); 
+          }} 
+          savedProfiles={sortedProfiles} 
+          isLoggedIn={!!auth?.currentUser} 
+        />
       </div>
     );
   }
-  
+
   // Safe variable assignment after auth
   const sunTransit = transits?.find(p => p.planet === 'Sun');
   const moonTransit = transits?.find(p => p.planet === 'Moon');
@@ -1629,16 +1641,6 @@ RULES FOR THIS READING:
           safeStorage.set('astroFormData', profileData);
         }}
       />
-    );
-  }
-
-  if (activeModule === 'profiles') {
-    // Map the legacy 'profiles' route to the original Initialize AstroWatch form
-    return (
-      <div className="min-h-screen bg-slate-200 font-sans p-4 flex items-center justify-center">
-        {profileManagerComponent}
-        <BirthForm onDeleteProfile={handleDeleteProfile} onGoogleLogin={handleGoogleLogin} onSaveProfile={handleSaveProfile} onStartApp={() => setActiveModule(null)} savedProfiles={sortedProfiles} isLoggedIn={!!auth?.currentUser} />
-      </div>
     );
   }
 
@@ -1775,7 +1777,7 @@ RULES FOR THIS READING:
                               buttonClassName="max-w-[120px] md:max-w-none"
                               groupByCategory={true}
                             />
-                            <button onClick={() => setUserData(null)} className="p-1.5 hover:bg-green-100 rounded text-green-800 border border-transparent hover:border-green-300 shadow-sm"><Settings size={14} /></button>
+                            <button onClick={() => setActiveModule('profiles')} className="p-1.5 hover:bg-green-100 rounded text-green-800 border border-transparent hover:border-green-300 shadow-sm"><Settings size={14} /></button>
                           </div>
                           <span className="hidden md:inline text-right opacity-80 truncate pl-4">{String(userData.formData.dob)} {String(userData.formData.time)} | Birth: {String(userData.formData.city)}</span>
                         </div>
