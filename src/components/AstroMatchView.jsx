@@ -173,28 +173,9 @@ export default function AstroMatchView({ savedProfiles, onBack, onLoadCloudProfi
 
       {/* 🔮 MAIN CONTENT LAYOUT CONTAINER */}
       <div className="max-w-4xl mx-auto bg-white border border-amber-300 rounded-2xl shadow-xl p-6 md:p-10 mt-4">
-        <h2 className="text-3xl font-bold text-amber-800 mb-4 text-center tracking-wider">
-          ASHTAKOOT GUNA MILAN
+        <h2 className="text-3xl font-bold text-amber-800 mb-8 text-center tracking-wider">
+          DWADASHKOOT GUNA MILAN
         </h2>
-
-        {/* Import / Refresh / Cloud Profiles */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <div className="flex flex-wrap gap-3">
-            <input ref={fileInputRef} type="file" accept="application/json" onChange={handleFileChange} className="hidden" />
-            <button onClick={handleImportClick} className="text-xs bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1 rounded-lg shadow-sm">Import Profiles (JSON)</button>
-            <button onClick={() => window.location.reload()} className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1 rounded-lg shadow-sm">Refresh</button>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <button
-              onClick={onLoadCloudProfiles}
-              disabled={cloudLoading}
-              className="bg-slate-800 text-white px-3 py-1 rounded-lg shadow-sm hover:bg-slate-900 disabled:opacity-60"
-            >
-              {cloudLoading ? 'Loading Cloud Profiles…' : isCloudSignedIn ? 'Refresh Cloud Profiles' : 'Sign in to Load Cloud Profiles'}
-            </button>
-            {cloudStatus ? <span className="italic">{cloudStatus}</span> : null}
-          </div>
-        </div>
 
         {/* PROFILE SELECTION DROP-DOWNS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
