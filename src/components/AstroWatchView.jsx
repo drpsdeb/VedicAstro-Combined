@@ -378,58 +378,57 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
       const items = catMap[catName];
       if (!items || items.length === 0) return;
 
-      if (catName === "Family") {
-        const heads = items.filter(opt => !opt.familyHeadId || opt.familyHeadId === opt.id);
-        const members = items.filter(opt => opt.familyHeadId && opt.familyHeadId !== opt.id);
-        
-        const familyGroups = [];
-        
-        heads.forEach(head => {
-          const groupMembers = members.filter(m => m.familyHeadId === head.id);
-          
-          const headMatches = matchedSet.has(head.id);
+      const headsInCat = items.filter(opt => !opt.familyHeadId || opt.familyHeadId === opt.id);
+      const membersInCat = items.filter(opt => opt.familyHeadId && opt.familyHeadId !== opt.id);
+      
+      const referencedHeadIds = new Set(membersInCat.map(m => m.familyHeadId));
+      const allHeadsMap = new Map();
+      headsInCat.forEach(h => allHeadsMap.set(h.id, h));
+      
+      referencedHeadIds.forEach(headId => {
+        if (!allHeadsMap.has(headId)) {
+          const globalHead = sortedProfiles.find(o => o.id === headId);
+          if (globalHead) {
+            allHeadsMap.set(headId, globalHead);
+          }
+        }
+      });
+      
+      const groups = [];
+      const groupedItemIds = new Set();
+      
+      allHeadsMap.forEach((head, headId) => {
+        const groupMembers = membersInCat.filter(m => m.familyHeadId === headId);
+        if (groupMembers.length > 0) {
+          const headMatches = items.some(opt => opt.id === headId) && matchedSet.has(headId);
           const matchedMembers = groupMembers.filter(m => matchedSet.has(m.id));
           
           if (headMatches || matchedMembers.length > 0) {
-            familyGroups.push({
+            groups.push({
               head,
               showHead: headMatches,
               members: matchedMembers
             });
+            if (headMatches) groupedItemIds.add(headId);
+            matchedMembers.forEach(m => groupedItemIds.add(m.id));
           }
+        }
+      });
+      
+      const standaloneItems = items.filter(opt => matchedSet.has(opt.id) && !groupedItemIds.has(opt.id));
+
+      if (groups.length > 0 || standaloneItems.length > 0) {
+        result.push({
+          categoryName: catName,
+          groups,
+          standaloneItems
         });
-
-        const orphanMembers = members.filter(m => !heads.some(h => h.id === m.familyHeadId));
-        const matchedOrphans = orphanMembers.filter(m => matchedSet.has(m.id));
-        if (matchedOrphans.length > 0) {
-          familyGroups.push({
-            head: { id: "family_other", name: "Other Family" },
-            showHead: false,
-            members: matchedOrphans
-          });
-        }
-
-        if (familyGroups.length > 0) {
-          result.push({
-            categoryName: catName,
-            isFamily: true,
-            familyGroups
-          });
-        }
-      } else {
-        const matchedItems = items.filter(opt => matchedSet.has(opt.id));
-        if (matchedItems.length > 0) {
-          result.push({
-            categoryName: catName,
-            isFamily: false,
-            items: matchedItems
-          });
-        }
       }
     });
 
     return result;
   }, [sortedProfiles, filteredProfiles]);
+
 
   const [viewMode, setViewMode] = useState('chart'); 
   const [subChart, setSubChart] = useState('d9');
@@ -635,87 +634,83 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
                     </button>
                     
                     {isCatExpanded && (
-                      catGroup.isFamily ? (
-                        <div className="pl-1.5 space-y-1.5 border-l border-emerald-800/10 ml-1">
-                          {catGroup.familyGroups.map((fam) => {
-                            const famKey = `family_${fam.head.id}`;
-                            const isFamExpanded = expandedFolders[famKey] !== false;
-                            return (
-                              <div key={fam.head.id} className="space-y-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleFolder(famKey)}
-                                  className="w-full px-1.5 py-0.5 text-[9px] font-bold text-amber-800 hover:text-amber-900 bg-amber-50/50 hover:bg-amber-50 rounded flex items-center justify-between text-left transition-colors"
-                                >
-                                  <span className="flex items-center gap-1">
-                                    <span>👨‍👩‍👧‍👦</span>
-                                    {fam.head.name}'s Group
-                                  </span>
-                                  <span className="text-[7px] opacity-60">{isFamExpanded ? '▼' : '▶'}</span>
-                                </button>
-                                
-                                {isFamExpanded && (
-                                  <div className="pl-2 border-l border-amber-800/10 ml-1 space-y-0.5">
-                                    {fam.showHead && (
+                      <div className="pl-1.5 space-y-1.5 border-l border-emerald-800/10 ml-1">
+                        {catGroup.groups.map((fam) => {
+                          const famKey = `family_${fam.head.id}`;
+                          const isFamExpanded = expandedFolders[famKey] !== false;
+                          return (
+                            <div key={fam.head.id} className="space-y-0.5">
+                              <button
+                                type="button"
+                                onClick={() => toggleFolder(famKey)}
+                                className="w-full px-1.5 py-0.5 text-[9px] font-bold text-amber-800 hover:text-amber-900 bg-amber-50/50 hover:bg-amber-50 rounded flex items-center justify-between text-left transition-colors"
+                              >
+                                <span className="flex items-center gap-1">
+                                  <span>👨‍👩‍👧‍👦</span>
+                                  {fam.head.name}'s Group
+                                </span>
+                                <span className="text-[7px] opacity-60">{isFamExpanded ? '▼' : '▶'}</span>
+                              </button>
+                              
+                              {isFamExpanded && (
+                                <div className="pl-2 border-l border-amber-800/10 ml-1 space-y-0.5">
+                                  {fam.showHead && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProfile(fam.head.name);
+                                        if (onSelectProfile) onSelectProfile(fam.head);
+                                      }}
+                                      className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
+                                        fam.head.name === selectedProfile ? 'bg-slate-600 text-white font-bold' : 'text-emerald-950 hover:bg-emerald-50'
+                                      }`}
+                                    >
+                                      {fam.head.name} (Self)
+                                    </button>
+                                  )}
+                                  {fam.members.map((m) => {
+                                    const isActive = m.name === selectedProfile;
+                                    return (
                                       <button
                                         type="button"
+                                        key={m.id}
                                         onClick={() => {
-                                          setSelectedProfile(fam.head.name);
-                                          if (onSelectProfile) onSelectProfile(fam.head);
+                                          setSelectedProfile(m.name);
+                                          if (onSelectProfile) onSelectProfile(m);
                                         }}
                                         className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
-                                          fam.head.name === selectedProfile ? 'bg-slate-600 text-white font-bold' : 'text-emerald-950 hover:bg-emerald-50'
+                                          isActive ? 'bg-slate-600 text-white font-bold' : 'text-slate-600 hover:bg-emerald-50'
                                         }`}
                                       >
-                                        {fam.head.name} (Self)
+                                        ├─ {m.name} {m.relationship ? `(${m.relationship})` : ''}
                                       </button>
-                                    )}
-                                    {fam.members.map((m) => {
-                                      const isActive = m.name === selectedProfile;
-                                      return (
-                                        <button
-                                          type="button"
-                                          key={m.id}
-                                          onClick={() => {
-                                            setSelectedProfile(m.name);
-                                            if (onSelectProfile) onSelectProfile(m);
-                                          }}
-                                          className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
-                                            isActive ? 'bg-slate-600 text-white font-bold' : 'text-slate-600 hover:bg-emerald-50'
-                                          }`}
-                                        >
-                                          ├─ {m.name} {m.relationship ? `(${m.relationship})` : ''}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="pl-1.5 space-y-0.5 border-l border-emerald-800/10 ml-1">
-                          {catGroup.items.map((p) => {
-                            const isActive = p.name === selectedProfile;
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedProfile(p.name);
-                                  if (onSelectProfile) onSelectProfile(p);
-                                }}
-                                className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
-                                  isActive ? 'bg-slate-600 text-white font-bold' : 'text-emerald-950 hover:bg-emerald-50'
-                                }`}
-                              >
-                                {p.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {catGroup.standaloneItems.map((p) => {
+                          const isActive = p.name === selectedProfile;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedProfile(p.name);
+                                if (onSelectProfile) onSelectProfile(p);
+                              }}
+                              className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
+                                isActive ? 'bg-slate-600 text-white font-bold' : 'text-emerald-950 hover:bg-emerald-50'
+                              }`}
+                            >
+                              {p.name}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 );

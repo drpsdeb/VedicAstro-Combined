@@ -321,9 +321,7 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
                 const cat = e.target.value;
                 setFormData({
                   ...formData,
-                  category: cat,
-                  familyHeadId: cat === 'Family' ? formData.familyHeadId : '',
-                  relationship: cat === 'Family' ? formData.relationship : ''
+                  category: cat
                 });
               }}
               className="w-full p-2 bg-white rounded border border-blue-200 outline-none text-sm font-semibold text-blue-955 cursor-pointer"
@@ -337,50 +335,94 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
             </select>
           </div>
 
-          {formData.category === 'Family' && (
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-blue-100">
-              <div>
-                <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">Family Group / Head</label>
-                <select
-                  value={formData.familyHeadId || ''}
-                  onChange={e => setFormData({ ...formData, familyHeadId: e.target.value })}
-                  className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 cursor-pointer"
-                >
-                  <option value="">-- None (Is Family Head) --</option>
-                  {savedProfiles
-                    .filter(p => p && p.name && (!p.familyHeadId || p.familyHeadId === p.id) && p.id !== formData.id)
-                    .map(head => (
-                      <option key={head.id} value={head.id}>{head.name}</option>
-                    ))
-                  }
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">Relationship to Head</label>
-                <select
-                  value={formData.relationship || ''}
-                  onChange={e => setFormData({ ...formData, relationship: e.target.value })}
-                  disabled={!formData.familyHeadId}
-                  className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <option value="">-- Select Role --</option>
-                  <option value="Spouse">Spouse</option>
-                  <option value="Father">Father</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Son">Son</option>
-                  <option value="Daughter">Daughter</option>
-                  <option value="Daughter-in-law">Daughter-in-law</option>
-                  <option value="Son-in-law">Son-in-law</option>
-                  <option value="Brother">Brother</option>
-                  <option value="Sister">Sister</option>
-                  <option value="Grandchild">Grandchild</option>
-                  <option value="Relative">Relative</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-blue-100">
+            <div>
+              <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">
+                {formData.category === 'Family' ? 'Family Group / Head' : 'Group / Head Profile'}
+              </label>
+              <select
+                value={formData.familyHeadId || ''}
+                onChange={e => setFormData({ ...formData, familyHeadId: e.target.value })}
+                className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 cursor-pointer"
+              >
+                <option value="">
+                  {formData.category === 'Family' ? '-- None (Is Family Head) --' : '-- None (Is Group Head) --'}
+                </option>
+                {savedProfiles
+                  .filter(p => p && p.name && (!p.familyHeadId || p.familyHeadId === p.id) && p.id !== formData.id)
+                  .map(head => (
+                    <option key={head.id} value={head.id}>{head.name}</option>
+                  ))
+                }
+              </select>
             </div>
-          )}
+
+            <div>
+              <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">
+                {formData.category === 'Family' ? 'Relationship to Head' : 'Relationship / Role'}
+              </label>
+              <select
+                value={formData.relationship || ''}
+                onChange={e => setFormData({ ...formData, relationship: e.target.value })}
+                disabled={!formData.familyHeadId}
+                className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <option value="">-- Select Role --</option>
+                {formData.category === 'Family' ? (
+                  <>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Father">Father</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Son">Son</option>
+                    <option value="Daughter">Daughter</option>
+                    <option value="Daughter-in-law">Daughter-in-law</option>
+                    <option value="Son-in-law">Son-in-law</option>
+                    <option value="Brother">Brother</option>
+                    <option value="Sister">Sister</option>
+                    <option value="Grandchild">Grandchild</option>
+                    <option value="Relative">Relative</option>
+                    <option value="Other">Other</option>
+                  </>
+                ) : formData.category === 'Friend' ? (
+                  <>
+                    <option value="Friend">Friend</option>
+                    <option value="Colleague">Colleague</option>
+                    <option value="Neighbor">Neighbor</option>
+                    <option value="Classmate">Classmate</option>
+                    <option value="Other">Other</option>
+                  </>
+                ) : formData.category === 'Patient' ? (
+                  <>
+                    <option value="Patient">Patient</option>
+                    <option value="Client">Client</option>
+                    <option value="Referral">Referral</option>
+                    <option value="Other">Other</option>
+                  </>
+                ) : formData.category === 'Facebook' ? (
+                  <>
+                    <option value="Social Contact">Social Contact</option>
+                    <option value="Online Friend">Online Friend</option>
+                    <option value="Follower">Follower</option>
+                    <option value="Other">Other</option>
+                  </>
+                ) : formData.category === 'Client' ? (
+                  <>
+                    <option value="Client">Client</option>
+                    <option value="Partner">Partner</option>
+                    <option value="Vendor">Vendor</option>
+                    <option value="Consultant">Consultant</option>
+                    <option value="Other">Other</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Associate">Associate</option>
+                    <option value="Other">Other</option>
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
+
         </div>
 
         <div className="grid grid-cols-3 gap-2">
