@@ -54,6 +54,81 @@ const MATCH_TYPES = {
   }
 };
 
+function checkMangalDosha(profileData) {
+  if (!profileData) return { hasDosha: false };
+  const astro = getPositionsForProfile(profileData);
+  if (!astro || !astro.planets) return { hasDosha: false };
+
+  const mars = astro.planets.find(p => p.name === 'Mars');
+  const jupiter = astro.planets.find(p => p.name === 'Jupiter');
+  const lagnaIndex = astro.lagnaIndex;
+
+  if (!mars || isNaN(lagnaIndex)) return { hasDosha: false };
+
+  const marsHouse = ((mars.rasiIndex - lagnaIndex + 12) % 12) + 1;
+  const isMangalHouse = [1, 2, 4, 7, 8, 12].includes(marsHouse);
+
+  if (!isMangalHouse) {
+    return {
+      hasDosha: false,
+      marsHouse,
+      marsRasi: mars.rasi
+    };
+  }
+
+  // It is in a Manglik house, now check for cancellation (Bhang) rules
+  let isCancelled = false;
+  let cancelReason = '';
+
+  // Rule 1: Mars in own sign or exaltation sign
+  // Aries (0), Scorpio (7), Capricorn (9)
+  if ([0, 7, 9].includes(mars.rasiIndex)) {
+    isCancelled = true;
+    cancelReason = `Mars is in its own or exalted sign (${mars.rasi}).`;
+  }
+
+  // Rule 2: Conjunction or Aspect by Jupiter
+  if (jupiter) {
+    const jupiterHouse = ((jupiter.rasiIndex - lagnaIndex + 12) % 12) + 1;
+    const distance = ((marsHouse - jupiterHouse + 12) % 12) + 1;
+    if ([1, 5, 7, 9].includes(distance)) {
+      isCancelled = true;
+      cancelReason = distance === 1 
+        ? `Mars is conjoined with Jupiter (Guru) in House ${marsHouse}.` 
+        : `Mars is aspected by Jupiter (Guru) from House ${jupiterHouse}.`;
+    }
+  }
+
+  // Rule 3: Specific house-sign pairs
+  if (!isCancelled) {
+    const rasiIdx = mars.rasiIndex;
+    if (marsHouse === 2 && [2, 5].includes(rasiIdx)) {
+      isCancelled = true;
+      cancelReason = `Mars in 2nd house in Mercury's sign (${mars.rasi}).`;
+    } else if (marsHouse === 4 && [0, 7].includes(rasiIdx)) {
+      isCancelled = true;
+      cancelReason = `Mars in 4th house in its own sign (${mars.rasi}).`;
+    } else if (marsHouse === 7 && [3, 9].includes(rasiIdx)) {
+      isCancelled = true;
+      cancelReason = `Mars in 7th house in Cancer or Capricorn (${mars.rasi}).`;
+    } else if (marsHouse === 8 && [8, 11].includes(rasiIdx)) {
+      isCancelled = true;
+      cancelReason = `Mars in 8th house in Jupiter's sign (${mars.rasi}).`;
+    } else if (marsHouse === 12 && [1, 6].includes(rasiIdx)) {
+      isCancelled = true;
+      cancelReason = `Mars in 12th house in Venus's sign (${mars.rasi}).`;
+    }
+  }
+
+  return {
+    hasDosha: true,
+    isCancelled,
+    cancelReason,
+    marsHouse,
+    marsRasi: mars.rasi
+  };
+}
+
 export default function AstroMatchView({ savedProfiles, onBack, onLoadCloudProfiles, cloudStatus, cloudLoading, isCloudSignedIn }) {
   const fileInputRef = React.useRef(null);
 
@@ -244,12 +319,57 @@ export default function AstroMatchView({ savedProfiles, onBack, onLoadCloudProfi
 
     const totalScore = Object.values(filteredScores).reduce((sum, value) => sum + value, 0);
 
+    // Calculate Mangal Dosha & Bhanga
+    const boyMangal = checkMangalDosha(boyData);
+    const girlMangal = checkMangalDosha(girlData);
+
+    let mangalVerdict = '';
+    let mangalSeverity = 'neutral';
+
+    const boyActive = boyMangal.hasDosha && !boyMangal.isCancelled;
+    const girlActive = girlMangal.hasDosha && !girlMangal.isCancelled;
+
+    if (boyActive && girlActive) {
+      mangalVerdict = "Both partners have active Mangal Dosha. According to Shastras, when both partners are Manglik, the doshas mutually neutralize (cancel) each other out. This is a highly favorable configuration (Bilateral Manglik harmony).";
+      mangalSeverity = 'safe';
+    } else if (!boyMangal.hasDosha && !girlMangal.hasDosha) {
+      mangalVerdict = "Both partners are Non-Manglik. No Mangal Dosha affliction is present in either chart. This is a safe and compatible alignment.";
+      mangalSeverity = 'safe';
+    } else if (boyActive && !girlActive) {
+      mangalVerdict = "Boy has active Mangal Dosha, but Girl is Non-Manglik. This represents a potential match mismatch (affliction). Remedies (like Kumbha Vivaha or Pujas) are traditionally recommended to mitigate friction.";
+      mangalSeverity = 'severe';
+    } else if (!boyActive && girlActive) {
+      mangalVerdict = "Girl has active Mangal Dosha, but Boy is Non-Manglik. This represents a potential match mismatch (affliction). Remedies (like Kumbha Vivaha or Pujas) are traditionally recommended to mitigate friction.";
+      mangalSeverity = 'severe';
+    } else {
+      if (boyMangal.isCancelled && girlMangal.isCancelled) {
+        mangalVerdict = "Both partners had Mangal Dosha placements, but they are cancelled (Bhanga) in both charts by strong counteracting placements. Highly compatible.";
+        mangalSeverity = 'safe';
+      } else if (boyMangal.isCancelled && !girlActive) {
+        mangalVerdict = `Boy has Mars in House ${boyMangal.marsHouse}, but it is cancelled: ${boyMangal.cancelReason} Girl is Non-Manglik. This is a compatible alignment.`;
+        mangalSeverity = 'safe';
+      } else if (girlMangal.isCancelled && !boyActive) {
+        mangalVerdict = `Girl has Mars in House ${girlMangal.marsHouse}, but it is cancelled: ${girlMangal.cancelReason} Boy is Non-Manglik. This is a compatible alignment.`;
+        mangalSeverity = 'safe';
+      } else if (boyActive && girlMangal.isCancelled) {
+        mangalVerdict = `Boy has active Mangal Dosha, but Girl's Mangal Dosha is cancelled (${girlMangal.cancelReason}). Since the Girl is effectively Non-Manglik, a partial affliction exists. Remedial advice is suggested.`;
+        mangalSeverity = 'warning';
+      } else if (girlActive && boyMangal.isCancelled) {
+        mangalVerdict = `Girl has active Mangal Dosha, but Boy's Mangal Dosha is cancelled (${boyMangal.cancelReason}). Since the Boy is effectively Non-Manglik, a partial affliction exists. Remedial advice is suggested.`;
+        mangalSeverity = 'warning';
+      }
+    }
+
     setMatchResult({
       totalScore,
       maxPoints,
       scores: filteredScores,
       doshas,
       matchType,
+      boyMangal,
+      girlMangal,
+      mangalVerdict,
+      mangalSeverity,
       boyDetails: { name: boyData.name || selectedBoy, rasi: boyMoon?.rasi || 'Unknown', nakshatra: boyMoon?.nakshatra || 'Unknown' },
       girlDetails: { name: girlData.name || selectedGirl, rasi: girlMoon?.rasi || 'Unknown', nakshatra: girlMoon?.nakshatra || 'Unknown' }
     });
@@ -389,6 +509,80 @@ export default function AstroMatchView({ savedProfiles, onBack, onLoadCloudProfi
             ) : (
               <div className="mb-6 p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold">
                 No major compatibility warning indicators detected.
+              </div>
+            )}
+
+            {/* MANGAL DOSHA DETAILS PANEL */}
+            {matchResult.matchType === 'marriage' && matchResult.boyMangal && matchResult.girlMangal && (
+              <div className="mb-8 p-6 rounded-2xl border border-amber-200 bg-amber-50/30 text-slate-800 shadow-sm">
+                <h3 className="text-sm font-bold text-amber-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span>🔥</span> Mangal Dosha Analysis (Kuja Dosha)
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                  {/* BOY STATUS */}
+                  <div className="p-4 bg-white border border-slate-100 rounded-xl flex flex-col gap-2 shadow-inner">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Boy's Chart Placement</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Mars in House {matchResult.boyMangal.marsHouse} ({matchResult.boyMangal.marsRasi})</span>
+                      {matchResult.boyMangal.hasDosha ? (
+                        matchResult.boyMangal.isCancelled ? (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase tracking-wider">Cancelled</span>
+                        ) : (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded bg-rose-100 text-rose-800 uppercase tracking-wider">Manglik</span>
+                        )
+                      ) : (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase tracking-wider">Non-Manglik</span>
+                      )}
+                    </div>
+                    {matchResult.boyMangal.isCancelled && (
+                      <p className="text-[10px] text-slate-500 italic mt-1 leading-relaxed">
+                        Reason: {matchResult.boyMangal.cancelReason}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* GIRL STATUS */}
+                  <div className="p-4 bg-white border border-slate-100 rounded-xl flex flex-col gap-2 shadow-inner">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Girl's Chart Placement</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Mars in House {matchResult.girlMangal.marsHouse} ({matchResult.girlMangal.marsRasi})</span>
+                      {matchResult.girlMangal.hasDosha ? (
+                        matchResult.girlMangal.isCancelled ? (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase tracking-wider">Cancelled</span>
+                        ) : (
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded bg-rose-100 text-rose-800 uppercase tracking-wider">Manglik</span>
+                        )
+                      ) : (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase tracking-wider">Non-Manglik</span>
+                      )}
+                    </div>
+                    {matchResult.girlMangal.isCancelled && (
+                      <p className="text-[10px] text-slate-500 italic mt-1 leading-relaxed">
+                        Reason: {matchResult.girlMangal.cancelReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* VERDICT SUMMARY */}
+                <div className={`p-4 rounded-xl border flex items-start gap-3 ${
+                  matchResult.mangalSeverity === 'safe'
+                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                    : matchResult.mangalSeverity === 'warning'
+                    ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                    : 'bg-rose-50/80 border-rose-200 text-rose-900'
+                }`}>
+                  <span className="text-lg leading-none mt-0.5">
+                    {matchResult.mangalSeverity === 'safe' ? '✅' : matchResult.mangalSeverity === 'warning' ? '⚠️' : '🚨'}
+                  </span>
+                  <div className="flex-1">
+                    <div className="font-bold text-[10px] uppercase tracking-wider mb-1">Dosha Verdict</div>
+                    <p className="text-xs leading-relaxed font-semibold">
+                      {matchResult.mangalVerdict}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
