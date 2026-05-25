@@ -10,6 +10,183 @@ import {
 } from '../utils/ephemerisEngine';
 import SearchableDropdown from './SearchableDropdown';
 
+const ASTRO_FAQS = [
+  {
+    category: "Health & Longevity",
+    icon: "🩺",
+    subcategories: [
+      {
+        name: "Longevity & Lifespan",
+        questions: [
+          "How long will I/the child live?",
+          "Will I have an untimely or accidental death?"
+        ]
+      },
+      {
+        name: "Chronic Diseases & Health Vulnerabilities",
+        questions: [
+          "Which planets are causing my health problems?",
+          "Am I prone to specific chronic or recurring conditions?",
+          "Why do I have a mysterious or undiagnosed illness?"
+        ]
+      },
+      {
+        name: "Timing of Illness and Recovery",
+        questions: [
+          "When will a specific disease flare up?",
+          "When will I recover from this health issue?"
+        ]
+      },
+      {
+        name: "Preventative Measures & Remedies",
+        questions: [
+          "What can I do to improve or protect my health?"
+        ]
+      }
+    ]
+  },
+  {
+    category: "Education",
+    icon: "🎓",
+    subcategories: [
+      {
+        name: "Academic Success & Challenges",
+        questions: [
+          "Will I find success in my higher education?",
+          "Why is there failure in education or no inclination for study?",
+          "Are there indications for a scholarship?",
+          "Will I study abroad (Foreign education)?",
+          "Which field of education aligns best with my planets?",
+          "Will I win any prize or awards in my studies?"
+        ]
+      }
+    ]
+  },
+  {
+    category: "Career & Finances",
+    icon: "💼",
+    subcategories: [
+      {
+        name: "Career Path & Choices",
+        questions: [
+          "What career path aligns with my birth chart?",
+          "Should I choose a Job or Business?",
+          "Is a business partnership advisable according to my chart?",
+          "Will I get a foreign job or a government job?"
+        ]
+      },
+      {
+        name: "Timing & Professional Trajectory",
+        questions: [
+          "When is the right time for a career change?",
+          "When will I get a promotion or career advancement?",
+          "How can I overcome current workplace obstacles?"
+        ]
+      },
+      {
+        name: "Wealth & Financial Prospects",
+        questions: [
+          "What is my wealth potential in my horoscope?",
+          "When will my financial struggles end?",
+          "Is this a good time for me to invest?"
+        ]
+      }
+    ]
+  },
+  {
+    category: "Marriage & Love",
+    icon: "💍",
+    subcategories: [
+      {
+        name: "Timing and Destiny",
+        questions: [
+          "When will I get married?",
+          "Will my marriage be a love marriage or an arranged marriage?",
+          "Will I find my true love?",
+          "When will I meet my soulmate or get married early or late?"
+        ]
+      },
+      {
+        name: "Compatibility & Dynamics",
+        questions: [
+          "Are my partner and I compatible?",
+          "Will our relationship last?",
+          "Do we have good physical and sexual chemistry?",
+          "Will it be a love marriage out of cast, creed, and culture?",
+          "Will I have platonic love or physical relationship?",
+          "Are there indications of a hidden, scandalous, or commercial love affair?",
+          "Will there be termination of a love affair or multiple love affairs?",
+          "Will I have a love affair with a person older or younger?"
+        ]
+      },
+      {
+        name: "Obstacles & Remedies",
+        questions: [
+          "Why are my relationships never working out?",
+          "Will my family oppose my marriage?",
+          "What astrological remedies can I perform to reduce conflicts?"
+        ]
+      }
+    ]
+  },
+  {
+    category: "Children",
+    icon: "👶",
+    subcategories: [
+      {
+        name: "Conception & Family Planning",
+        questions: [
+          "Will I have children according to my chart?",
+          "When will I conceive?",
+          "Are there obstacles to having children?"
+        ]
+      },
+      {
+        name: "Parenting & Child Development",
+        questions: [
+          "What is my child's natural temperament?",
+          "Which educational paths suit them best?",
+          "How can I improve my relationship with my child?",
+          "Will my child be healthy and balanced?"
+        ]
+      }
+    ]
+  },
+  {
+    category: "Life Purpose & Karma",
+    icon: "🔮",
+    subcategories: [
+      {
+        name: "Life Purpose & Dharma",
+        questions: [
+          "What is my soul's true purpose in this lifetime?",
+          "What are my natural, hidden gifts and talents?",
+          "How can I best serve the world with my unique skills?",
+          "What is my path to professional or personal fulfillment?"
+        ]
+      },
+      {
+        name: "Past Lives & Karma",
+        questions: [
+          "What unresolved karma or patterns did I bring from past lives?",
+          "What karmic lessons am I supposed to master in this incarnation?",
+          "What specific habits or baggage am I meant to leave behind?"
+        ]
+      },
+      {
+        name: "Spiritual Growth & Transitions",
+        questions: [
+          "What is my natural inclination toward spiritual connection?",
+          "How can I best connect with the divine or my higher self?",
+          "How do I develop my intuition or psychic abilities?",
+          "How can I navigate this period of intense personal transformation?",
+          "What is the deeper spiritual meaning of my current life crisis?"
+        ]
+      }
+    ]
+  }
+];
+
 const PLANET_LORE = {
   Sun: 'Soul, authority, vitality, father, confidence, and public power.',
   Moon: 'Mind, emotion, mother, comfort, memory, and daily feeling.',
@@ -441,6 +618,8 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
   const [chatInput, setChatInput] = useState('');
   const [selectedContext, setSelectedContext] = useState(null);
   const [time, setTime] = useState(new Date());
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [expandedFaqCat, setExpandedFaqCat] = useState(null);
 
   const addChatMessage = (message) => setChatMessages(prev => [...prev, message]);
 
@@ -784,6 +963,62 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
                 <div className="text-[11px] leading-normal whitespace-pre-wrap">{msg.text}</div>
               </div>
             ))}
+          </div>
+
+          {/* SUGGESTED FAQS DRAWER */}
+          <div className="border border-amber-100 rounded-xl p-2.5 bg-amber-50/20 mb-2 overflow-y-auto max-h-[140px] shrink-0">
+            <button 
+              type="button"
+              onClick={() => setFaqOpen(!faqOpen)}
+              className="w-full text-left text-[10px] font-bold text-amber-800 flex justify-between items-center outline-none cursor-pointer"
+            >
+              <span className="flex items-center gap-1.5"><span>❓</span> Suggested Questions / FAQs</span>
+              <span className="text-[9px]">{faqOpen ? '▲' : '▼'}</span>
+            </button>
+            
+            {faqOpen && (
+              <div className="mt-2 space-y-1.5">
+                {ASTRO_FAQS.map((cat, cIdx) => {
+                  const isCatExpanded = expandedFaqCat === cIdx;
+                  return (
+                    <div key={cIdx} className="border border-amber-100/40 rounded-lg overflow-hidden bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedFaqCat(isCatExpanded ? null : cIdx)}
+                        className="w-full text-left px-2 py-1.5 text-[9px] font-bold text-slate-700 bg-slate-50 hover:bg-amber-50 flex justify-between items-center outline-none cursor-pointer animate-fade-in"
+                      >
+                        <span className="flex items-center gap-1.5 text-left">
+                          <span>{cat.icon}</span> {cat.category}
+                        </span>
+                        <span className="text-[8px] text-slate-400">{isCatExpanded ? '▼' : '▶'}</span>
+                      </button>
+                      {isCatExpanded && (
+                        <div className="p-2 bg-white space-y-2">
+                          {cat.subcategories.map((sub, sIdx) => (
+                            <div key={sIdx} className="space-y-1">
+                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tight border-b border-slate-100 pb-0.5">{sub.name}</div>
+                              <ul className="space-y-1 pl-1">
+                                {sub.questions.map((q, qIdx) => (
+                                  <li key={qIdx} className="text-left">
+                                    <button 
+                                      type="button"
+                                      onClick={() => setChatInput(q)}
+                                      className="w-full text-left text-[10px] text-amber-700 hover:text-amber-955 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer transition-colors leading-tight"
+                                    >
+                                      • {q}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleChatSubmit} className="bg-slate-50 border-t border-slate-200 pt-3">
