@@ -2,8 +2,8 @@
 // 🌌 ASTROWATCH HIGH-PRECISION CELESTIAL WATCHFACE & ORRERY (FINAL COMPILATION)
 // ============================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { BarChart2, ShieldAlert, Sparkles, Clock, Compass, Home, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { BarChart2, ShieldAlert, Sparkles, Clock, Compass, Home, X, Loader2 } from 'lucide-react';
 import { 
   getD9RasiIndex, getD10RasiIndex, getD6RasiIndex, getD20RasiIndex, calculateShadbala, GRAHAS,
   OfflineEphemeris, AstroEngine, getPositionsForProfile
@@ -499,7 +499,7 @@ const WatchFace = ({ time, transits, natalPlanets, lagnaIndex, sunTimes, onSymbo
   );
 };
 
-export default function AstroWatchView({ savedProfiles, onBack, currentProfileName, onSelectProfile }) {
+export default function AstroWatchView({ savedProfiles, onBack, currentProfileName, onSelectProfile, geminiKey, astroLevel = 'beginner', language = 'English' }) {
   const sortedProfiles = useMemo(() => {
     if (!savedProfiles) return [];
     return [...savedProfiles]
@@ -620,6 +620,12 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
   const [time, setTime] = useState(new Date());
   const [faqOpen, setFaqOpen] = useState(false);
   const [expandedFaqCat, setExpandedFaqCat] = useState(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, chatLoading]);
 
   const addChatMessage = (message) => setChatMessages(prev => [...prev, message]);
 
@@ -677,13 +683,49 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
     setChatMessages(prev => [...prev, { role: 'user', text: userText }, { role: 'assistant', text: aiText }]);
   };
 
-  const handleChatSubmit = (event) => {
-    event.preventDefault();
+  const handleChatSubmit = async (event) => {
+    if (event) event.preventDefault();
     const question = chatInput.trim();
     if (!question) return;
-    const aiText = generateAiAnswer(selectedContext, question);
-    setChatMessages(prev => [...prev, { role: 'user', text: question }, { role: 'assistant', text: aiText }]);
+
+    setChatMessages(prev => [...prev, { role: 'user', text: question }]);
     setChatInput('');
+    setChatLoading(true);
+
+    if (geminiKey && geminiKey.trim().length >= 10) {
+      const lagnaName = safeStr(AstroEngine.SIDEREAL_RASIS[isNaN(lagnaIndex) ? 0 : lagnaIndex], ' ');
+      const natalStr = natalPlanets.map(p => `${p.planet}${p.isRetro ? '(R)' : ''} in ${safeStr(AstroEngine.SIDEREAL_RASIS[p.rasiIndex], ' ')}`).join(', ');
+      const transitStr = transits.map(p => `${p.planet}${p.isRetro ? '(R)' : ''} in ${safeStr(AstroEngine.SIDEREAL_RASIS[p.rasiIndex], '')}`).join(', ');
+
+      let contextStr = "";
+      if (selectedContext) {
+        contextStr = `Active Selected Context: Title: ${selectedContext.title}. Subtitle: ${selectedContext.subtitle || ''}. Details/Lore: ${selectedContext.text || ''}.`;
+      }
+
+      let savContext = "";
+      if (ashtakavargaData && ashtakavargaData.sav) {
+        savContext = ` SAV Scores (Houses 1-12 starting from Ascendant): ${ashtakavargaData.sav.join(', ')}.`;
+      }
+
+      const prompt = `Client Name: ${profile?.name || 'User'}. Ascendant: ${lagnaName}. Natal: ${natalStr}. Transit: ${transitStr}.${savContext} ${contextStr} Question: ${question}. Act as AstroWatch AI, an advanced real-time Vedic astrology assistant. Keep the response to 3-4 concise, highly insightful sentences answering the user's question directly.`;
+
+      try {
+        const response = await AstroEngine.callGemini(prompt, geminiKey, astroLevel, language);
+        const answer = response.error ? `Error consulting stars: ${response.error}` : (response.text || 'No response from AI.');
+        setChatMessages(prev => [...prev, { role: 'assistant', text: answer }]);
+      } catch (err) {
+        setChatMessages(prev => [...prev, { role: 'assistant', text: `Failed to connect: ${err.message}` }]);
+      } finally {
+        setChatLoading(false);
+      }
+    } else {
+      setTimeout(() => {
+        const aiText = generateAiAnswer(selectedContext, question);
+        const notice = `\n\n⚠️ Note: To get live Gemini AI answers, please configure your Gemini API Key in the settings on the main page. Currently displaying simulated interpretation.`;
+        setChatMessages(prev => [...prev, { role: 'assistant', text: aiText + notice }]);
+        setChatLoading(false);
+      }, 600);
+    }
   };
 
   const profile = useMemo(() => {
@@ -963,6 +1005,13 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
                 <div className="text-[11px] leading-normal whitespace-pre-wrap">{msg.text}</div>
               </div>
             ))}
+            {chatLoading && (
+              <div className="rounded-2xl p-3 bg-slate-100 text-slate-800 shadow-sm animate-pulse flex items-center gap-2">
+                <Loader2 size={12} className="animate-spin text-amber-600" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Consulting stars...</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
 
           {/* SUGGESTED FAQS DRAWER */}
@@ -1027,16 +1076,25 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
               rows={5}
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
+              disabled={chatLoading}
               placeholder={selectedContext ? 'Ask about this selected element...' : 'Ask about the chart, or click an element first...'}
-              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition-shadow focus:shadow-outline"
+              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition-shadow focus:shadow-outline disabled:opacity-50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleChatSubmit(e);
+                }
+              }}
             />
-            <div className="mt-3 flex flex-wrap gap-2 items-center justify-between">
+             <div className="mt-3 flex flex-wrap gap-2 items-center justify-between">
               <div className="flex flex-wrap gap-2 text-[9px] text-slate-600">
-                <button type="button" onClick={() => setChatInput('How does this placement shape career and reputation?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition">Career</button>
-                <button type="button" onClick={() => setChatInput('What does this tell me about relationships and emotions?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition">Relationships</button>
-                <button type="button" onClick={() => setChatInput('What is the most important takeaway from this chart element?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition">Summary</button>
+                <button type="button" disabled={chatLoading} onClick={() => setChatInput('How does this placement shape career and reputation?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition disabled:opacity-50">Career</button>
+                <button type="button" disabled={chatLoading} onClick={() => setChatInput('What does this tell me about relationships and emotions?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition disabled:opacity-50">Relationships</button>
+                <button type="button" disabled={chatLoading} onClick={() => setChatInput('What is the most important takeaway from this chart element?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition disabled:opacity-50">Summary</button>
               </div>
-              <button type="submit" className="rounded-full bg-amber-600 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-amber-700 transition">Ask Astro AI</button>
+              <button type="submit" disabled={chatLoading} className="rounded-full bg-amber-600 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-amber-700 transition disabled:opacity-50">
+                {chatLoading ? 'Asking...' : 'Ask Astro AI'}
+              </button>
             </div>
             {selectedContext ? <div className="mt-3 text-[9px] text-slate-500">Current target: {selectedContext.title}</div> : null}
           </form>

@@ -1819,6 +1819,9 @@ RULES FOR THIS READING:
           setUserData({ ...userData, formData: profileData });
           safeStorage.set('astroFormData', profileData);
         }}
+        geminiKey={userData?.geminiKey}
+        astroLevel={userData?.formData?.astroLevel}
+        language={userData?.formData?.language}
       />
     );
   }
