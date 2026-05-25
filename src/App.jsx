@@ -65,6 +65,9 @@ const normalizeProfile = (profile = {}) => {
   const lat = Number(profile.lat ?? profile.latitude ?? profile.currentLat ?? profile.currentLatitude ?? 0);
   const lon = Number(profile.lon ?? profile.longitude ?? profile.currentLon ?? profile.currentLongitude ?? 0);
   const tzone = Number(profile.tzone ?? profile.tz ?? profile.timezone ?? profile.currentTzone ?? profile.currentTimezone ?? 5.5);
+  const category = String(profile.category || 'Family').trim();
+  const familyHeadId = String(profile.familyHeadId || '').trim();
+  const relationship = String(profile.relationship || '').trim();
 
   return {
     ...profile,
@@ -74,6 +77,9 @@ const normalizeProfile = (profile = {}) => {
     lat: Number.isFinite(lat) ? lat : 0,
     lon: Number.isFinite(lon) ? lon : 0,
     tzone: Number.isFinite(tzone) ? tzone : 5.5,
+    category,
+    familyHeadId,
+    relationship,
     id: profile.id || generateProfileId({ name, dob })
   };
 };
@@ -130,7 +136,7 @@ import { OfflineEphemeris, AstroEngine, getPositionsForProfile } from './utils/e
 // UI COMPONENTS
 // ==========================================
 const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, onGoogleLogin , isLoggedIn }) => {
-  const emptyClient = { name: '', dob: '',dod: '', time: '', city: '', state: '', lat: 17.3850, lon: 78.4867, tzone: 5.5, sameAsBirth: true, currentCity: '', currentLat: 17.3850, currentLon: 78.4867, currentTzone: 5.5, astroLevel: 'beginner', language: 'English', chartStyle: 'North Indian', maritalStatus: 'Unknown', careerStatus: 'Unknown', parentsStatus: 'Unknown', children: 'Unknown', lifeContext: '' };
+  const emptyClient = { name: '', dob: '',dod: '', time: '', city: '', state: '', lat: 17.3850, lon: 78.4867, tzone: 5.5, sameAsBirth: true, currentCity: '', currentLat: 17.3850, currentLon: 78.4867, currentTzone: 5.5, astroLevel: 'beginner', language: 'English', chartStyle: 'North Indian', maritalStatus: 'Unknown', careerStatus: 'Unknown', parentsStatus: 'Unknown', children: 'Unknown', lifeContext: '', category: 'Family', familyHeadId: '', relationship: '' };
    
   const [formData, setFormData] = useState(() => {
     const savedData = safeStorage.get('astroFormData');
@@ -305,6 +311,78 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
         ) : null}
 
         <div><label className="block text-xs text-slate-600 mb-1 font-bold">FULL NAME</label><input type="text" value={formData.name || ''} className="w-full p-2 bg-white rounded border border-slate-300 focus:border-green-500 outline-none text-sm shadow-inner" required onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+
+        <div className="bg-[#f0f9ff] p-3 rounded-lg border border-blue-200 space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-blue-900 uppercase mb-1">Category / Group Tag</label>
+            <select 
+              value={formData.category || 'Family'} 
+              onChange={e => {
+                const cat = e.target.value;
+                setFormData({
+                  ...formData,
+                  category: cat,
+                  familyHeadId: cat === 'Family' ? formData.familyHeadId : '',
+                  relationship: cat === 'Family' ? formData.relationship : ''
+                });
+              }}
+              className="w-full p-2 bg-white rounded border border-blue-200 outline-none text-sm font-semibold text-blue-955 cursor-pointer"
+            >
+              <option value="Family">👨‍👩‍👧‍👦 Family</option>
+              <option value="Friend">🤝 Friend</option>
+              <option value="Patient">🩺 Patient</option>
+              <option value="Facebook">🌐 Facebook / Social</option>
+              <option value="Client">💼 Client</option>
+              <option value="Other">❓ Other</option>
+            </select>
+          </div>
+
+          {formData.category === 'Family' && (
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-blue-100">
+              <div>
+                <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">Family Group / Head</label>
+                <select
+                  value={formData.familyHeadId || ''}
+                  onChange={e => setFormData({ ...formData, familyHeadId: e.target.value })}
+                  className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 cursor-pointer"
+                >
+                  <option value="">-- None (Is Family Head) --</option>
+                  {savedProfiles
+                    .filter(p => p && p.name && (!p.familyHeadId || p.familyHeadId === p.id) && p.id !== formData.id)
+                    .map(head => (
+                      <option key={head.id} value={head.id}>{head.name}</option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">Relationship to Head</label>
+                <select
+                  value={formData.relationship || ''}
+                  onChange={e => setFormData({ ...formData, relationship: e.target.value })}
+                  disabled={!formData.familyHeadId}
+                  className="w-full p-1.5 bg-white rounded border border-blue-200 outline-none text-xs text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <option value="">-- Select Role --</option>
+                  <option value="Spouse">Spouse</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Son">Son</option>
+                  <option value="Daughter">Daughter</option>
+                  <option value="Daughter-in-law">Daughter-in-law</option>
+                  <option value="Son-in-law">Son-in-law</option>
+                  <option value="Brother">Brother</option>
+                  <option value="Sister">Sister</option>
+                  <option value="Grandchild">Grandchild</option>
+                  <option value="Relative">Relative</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-3 gap-2">
           <div><label className="block text-xs text-slate-600 mb-1 font-bold">DATE OF BIRTH</label><input type="date" value={formData.dob || ''} onChange={(e) => setFormData({...formData, dob: e.target.value})} className="w-full p-2 bg-white rounded border border-slate-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all" /></div>
           <div><label className="block text-xs text-slate-600 mb-1 font-bold">TIME OF BIRTH</label><input type="time" value={formData.time || ''} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-2 bg-white rounded border border-slate-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-all" /></div>
@@ -1672,6 +1750,7 @@ RULES FOR THIS READING:
                               onChange={handleTopBarProfileSwitch}
                               placeholder="Select Profile"
                               buttonClassName="max-w-[120px] md:max-w-none"
+                              groupByCategory={true}
                             />
                             <button onClick={() => setUserData(null)} className="p-1.5 hover:bg-green-100 rounded text-green-800 border border-transparent hover:border-green-300 shadow-sm"><Settings size={14} /></button>
                           </div>

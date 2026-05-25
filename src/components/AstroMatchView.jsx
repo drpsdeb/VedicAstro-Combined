@@ -193,6 +193,7 @@ export default function AstroMatchView({ savedProfiles, onBack, onLoadCloudProfi
               className="w-full"
               buttonClassName="w-full bg-white border border-slate-300 p-2.5 rounded-lg font-medium text-slate-700 text-sm shadow-sm hover:bg-slate-50 text-left h-[46px]"
               variant="form"
+              groupByCategory={true}
             />
           </div>
 
@@ -209,6 +210,7 @@ export default function AstroMatchView({ savedProfiles, onBack, onLoadCloudProfi
               className="w-full"
               buttonClassName="w-full bg-white border border-slate-300 p-2.5 rounded-lg font-medium text-slate-700 text-sm shadow-sm hover:bg-slate-50 text-left h-[46px]"
               variant="form"
+              groupByCategory={true}
             />
           </div>
 

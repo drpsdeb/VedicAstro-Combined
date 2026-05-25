@@ -8,6 +8,7 @@ import {
   getD9RasiIndex, getD10RasiIndex, getD6RasiIndex, getD20RasiIndex, calculateShadbala, GRAHAS,
   OfflineEphemeris, AstroEngine, getPositionsForProfile
 } from '../utils/ephemerisEngine';
+import SearchableDropdown from './SearchableDropdown';
 
 const PLANET_LORE = {
   Sun: 'Soul, authority, vitality, father, confidence, and public power.',
@@ -343,6 +344,93 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
     );
   }, [sortedProfiles, searchQuery]);
 
+  const [expandedFolders, setExpandedFolders] = useState({
+    Family: true,
+    Friend: true,
+    Patient: true,
+    Facebook: true,
+    Client: true,
+    Other: true
+  });
+
+  const toggleFolder = (key) => {
+    setExpandedFolders(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const groupedCategories = useMemo(() => {
+    const matchedSet = new Set(filteredProfiles.map(o => o.id));
+    const categoriesList = ["Family", "Friend", "Patient", "Facebook", "Client", "Other"];
+    
+    const catMap = {};
+    categoriesList.forEach(c => { catMap[c] = []; });
+    
+    sortedProfiles.forEach(opt => {
+      const cat = opt.category || "Family";
+      if (!catMap[cat]) {
+        catMap[cat] = [];
+      }
+      catMap[cat].push(opt);
+    });
+
+    const result = [];
+
+    categoriesList.forEach(catName => {
+      const items = catMap[catName];
+      if (!items || items.length === 0) return;
+
+      if (catName === "Family") {
+        const heads = items.filter(opt => !opt.familyHeadId || opt.familyHeadId === opt.id);
+        const members = items.filter(opt => opt.familyHeadId && opt.familyHeadId !== opt.id);
+        
+        const familyGroups = [];
+        
+        heads.forEach(head => {
+          const groupMembers = members.filter(m => m.familyHeadId === head.id);
+          
+          const headMatches = matchedSet.has(head.id);
+          const matchedMembers = groupMembers.filter(m => matchedSet.has(m.id));
+          
+          if (headMatches || matchedMembers.length > 0) {
+            familyGroups.push({
+              head,
+              showHead: headMatches,
+              members: matchedMembers
+            });
+          }
+        });
+
+        const orphanMembers = members.filter(m => !heads.some(h => h.id === m.familyHeadId));
+        const matchedOrphans = orphanMembers.filter(m => matchedSet.has(m.id));
+        if (matchedOrphans.length > 0) {
+          familyGroups.push({
+            head: { id: "family_other", name: "Other Family" },
+            showHead: false,
+            members: matchedOrphans
+          });
+        }
+
+        if (familyGroups.length > 0) {
+          result.push({
+            categoryName: catName,
+            isFamily: true,
+            familyGroups
+          });
+        }
+      } else {
+        const matchedItems = items.filter(opt => matchedSet.has(opt.id));
+        if (matchedItems.length > 0) {
+          result.push({
+            categoryName: catName,
+            isFamily: false,
+            items: matchedItems
+          });
+        }
+      }
+    });
+
+    return result;
+  }, [sortedProfiles, filteredProfiles]);
+
   const [viewMode, setViewMode] = useState('chart'); 
   const [subChart, setSubChart] = useState('d9');
   const [panchangView, setPanchangView] = useState('transit');
@@ -510,42 +598,130 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
           </div>
           <div className="flex items-center gap-2">
             <Sparkles size={14} className="text-blue-500 shrink-0" />
-            <select
-              value={selectedProfile}
-              onChange={e => {
-                const name = e.target.value;
-                const found = sortedProfiles.find(p => p.name === name);
+            <SearchableDropdown
+              options={sortedProfiles}
+              value={sortedProfiles.find(p => p.name === selectedProfile)?.id}
+              onChange={id => {
+                const found = sortedProfiles.find(p => p.id === id);
                 if (found) {
                   setSelectedProfile(found.name);
                   if (onSelectProfile) onSelectProfile(found);
                 }
               }}
-              className="flex-1 min-w-0 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-emerald-950 text-xs font-bold font-serif outline-none cursor-pointer"
-            >
-              {filteredProfiles.map((p, idx) => <option key={`${p.name}-${idx}`} value={p.name}>{p.name}</option>)}
-            </select>
+              placeholder="Select Profile"
+              className="flex-1 min-w-0"
+              buttonClassName="w-full bg-emerald-50 border border-emerald-200 text-emerald-955 text-xs font-bold font-serif"
+              groupByCategory={true}
+            />
             <Compass size={14} className="text-emerald-700 shrink-0" />
           </div>
           <div className="text-[10px] text-slate-500 px-1">Select Profile</div>
-          <div className="flex-1 min-h-0 overflow-y-auto border-t border-slate-100 pt-1">
+          <div className="flex-1 min-h-0 overflow-y-auto border-t border-slate-100 pt-1 space-y-2">
             {filteredProfiles.length > 0 ? (
-              filteredProfiles.map((p, idx) => {
-                const isActive = p.name === selectedProfile;
+              groupedCategories.map((catGroup) => {
+                const isCatExpanded = expandedFolders[catGroup.categoryName] !== false;
                 return (
-                  <button
-                    key={`${p.name}-list-${idx}`}
-                    onClick={() => {
-                      setSelectedProfile(p.name);
-                      if (onSelectProfile) onSelectProfile(p);
-                    }}
-                    className={`w-full text-left px-2 py-1.5 text-xs font-serif truncate ${isActive ? 'bg-slate-600 text-white' : 'text-emerald-950 hover:bg-emerald-50'}`}
-                  >
-                    {p.name}
-                  </button>
+                  <div key={catGroup.categoryName} className="space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleFolder(catGroup.categoryName)}
+                      className="w-full px-2 py-1 text-[10px] uppercase font-extrabold tracking-wider bg-emerald-50 hover:bg-emerald-100 rounded flex items-center justify-between text-left font-serif text-emerald-950 transition-colors"
+                    >
+                      <span className="flex items-center gap-1">
+                        <span>{isCatExpanded ? '📂' : '📁'}</span>
+                        {catGroup.categoryName}
+                      </span>
+                      <span className="text-[8px] opacity-60">{isCatExpanded ? '▼' : '▶'}</span>
+                    </button>
+                    
+                    {isCatExpanded && (
+                      catGroup.isFamily ? (
+                        <div className="pl-1.5 space-y-1.5 border-l border-emerald-800/10 ml-1">
+                          {catGroup.familyGroups.map((fam) => {
+                            const famKey = `family_${fam.head.id}`;
+                            const isFamExpanded = expandedFolders[famKey] !== false;
+                            return (
+                              <div key={fam.head.id} className="space-y-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleFolder(famKey)}
+                                  className="w-full px-1.5 py-0.5 text-[9px] font-bold text-amber-800 hover:text-amber-900 bg-amber-50/50 hover:bg-amber-50 rounded flex items-center justify-between text-left transition-colors"
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span>👨‍👩‍👧‍👦</span>
+                                    {fam.head.name}'s Group
+                                  </span>
+                                  <span className="text-[7px] opacity-60">{isFamExpanded ? '▼' : '▶'}</span>
+                                </button>
+                                
+                                {isFamExpanded && (
+                                  <div className="pl-2 border-l border-amber-800/10 ml-1 space-y-0.5">
+                                    {fam.showHead && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedProfile(fam.head.name);
+                                          if (onSelectProfile) onSelectProfile(fam.head);
+                                        }}
+                                        className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
+                                          fam.head.name === selectedProfile ? 'bg-slate-600 text-white font-bold' : 'text-emerald-950 hover:bg-emerald-50'
+                                        }`}
+                                      >
+                                        {fam.head.name} (Self)
+                                      </button>
+                                    )}
+                                    {fam.members.map((m) => {
+                                      const isActive = m.name === selectedProfile;
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={m.id}
+                                          onClick={() => {
+                                            setSelectedProfile(m.name);
+                                            if (onSelectProfile) onSelectProfile(m);
+                                          }}
+                                          className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
+                                            isActive ? 'bg-slate-600 text-white font-bold' : 'text-slate-600 hover:bg-emerald-50'
+                                          }`}
+                                        >
+                                          ├─ {m.name} {m.relationship ? `(${m.relationship})` : ''}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="pl-1.5 space-y-0.5 border-l border-emerald-800/10 ml-1">
+                          {catGroup.items.map((p) => {
+                            const isActive = p.name === selectedProfile;
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedProfile(p.name);
+                                  if (onSelectProfile) onSelectProfile(p);
+                                }}
+                                className={`w-full text-left px-2 py-1 text-xs font-serif truncate block ${
+                                  isActive ? 'bg-slate-600 text-white font-bold' : 'text-emerald-950 hover:bg-emerald-50'
+                                }`}
+                              >
+                                {p.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )
+                    )}
+                  </div>
                 );
               })
             ) : (
-              <div className="text-center text-[10px] text-slate-400 py-3">No profiles found</div>
+              <div className="text-center text-[10px] text-slate-400 py-3 font-serif">No profiles found</div>
             )}
           </div>
         </aside>
