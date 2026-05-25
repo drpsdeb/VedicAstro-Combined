@@ -934,7 +934,7 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
           </div>
         </main>
 
-        <aside className="w-full lg:w-[340px] shrink-0 bg-[#fdfde8] border border-amber-200 p-3 rounded-2xl shadow-lg flex flex-col overflow-hidden max-h-[calc(100vh-80px)]">
+        <aside className="w-full lg:w-[340px] shrink-0 bg-[#fdfde8] border border-amber-200 p-3 rounded-2xl shadow-lg flex flex-col overflow-hidden h-[calc(100vh-80px)]">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
               <div className="text-[11px] font-black uppercase tracking-widest text-amber-900">Astro AI Chat</div>
