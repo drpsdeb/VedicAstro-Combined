@@ -2,6 +2,7 @@
 // 🧠 VEDIC ASTROLOGY EPHEMERIS ENGINE, LORE & DATABASE (UNIFIED)
 // ============================================================================
 
+import { calculateYogas } from './yoga';
 export const NAKSHATRAS = [
   "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", 
   "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", 
@@ -275,121 +276,7 @@ export const AstroEngine = {
   // SHADBALA ENGINE (High-precision with local time & paksha calculations)
   calculateShadbala,
 
-  calculateYogas: (planets, lagnaIndex) => {
-      if (isNaN(lagnaIndex) || !planets || planets.length === 0) return [];
-      const yogas = [];
-      const placements = {}; 
-      const rasiPlacements = {}; 
-      const houseLords = {}; 
-      const lordships = {}; 
-
-      planets.forEach(p => {
-          const name = p.planet || p.name;
-          if(p && name !== 'Rahu' && name !== 'Ketu') {
-              placements[name] = ((p.rasiIndex - lagnaIndex + 12) % 12) + 1;
-              rasiPlacements[name] = p.rasiIndex;
-          }
-      });
-
-      for (let i = 1; i <= 12; i++) {
-          const rasi = (lagnaIndex + i - 1) % 12;
-          const lord = AstroEngine.RASHI_LORDS[rasi];
-          houseLords[i] = lord;
-          if (!lordships[lord]) lordships[lord] = [];
-          lordships[lord].push(i);
-      }
-
-      const getConjuncts = (pName) => Object.keys(placements).filter(p => placements[p] === placements[pName] && p !== pName);
-
-      const checkedExchanges = new Set();
-      Object.keys(placements).forEach(p1 => {
-          const h1 = placements[p1];
-          const disp1 = houseLords[h1];
-          if (disp1 && disp1 !== p1 && placements[disp1]) {
-              const h2 = placements[disp1];
-              const disp2 = houseLords[h2];
-              if (disp2 === p1 && !checkedExchanges.has(p1) && !checkedExchanges.has(disp1)) {
-                  const involved = [p1, disp1];
-                  yogas.push({ name: 'Parivartana Yoga', type: 'Exchange', involved: involved, icon: 'Zap', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', desc: `Mutual exchange between ${p1} (Lord of ${lordships[p1].join(',')}) and ${disp1} (Lord of ${lordships[disp1].join(',')}). Highly powerful connection.` });
-                  checkedExchanges.add(p1);
-                  checkedExchanges.add(disp1);
-              }
-          }
-      });
-
-      const kendras = [1, 4, 7, 10];
-      const trikonas = [1, 5, 9];
-      Object.keys(placements).forEach(p1 => {
-          const p1H = lordships[p1] || [];
-          if (p1H.some(h => kendras.includes(h))) {
-              getConjuncts(p1).forEach(p2 => {
-                  if (p1 < p2 && (lordships[p2] || []).some(h => trikonas.includes(h))) {
-                      const involved = [p1, p2];
-                      yogas.push({ name: 'Raja Yoga', type: 'Power/Status', involved: involved, icon: 'Star', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', desc: `${p1} and ${p2} combine Kendra and Trikona energies in House ${placements[p1]}.` });
-                  }
-              });
-          }
-      });
-
-      const wealthH = [1, 2, 5, 9, 11];
-      Object.keys(placements).forEach(p1 => {
-          const p1H = lordships[p1] || [];
-          if (p1H.some(h => wealthH.includes(h))) {
-              getConjuncts(p1).forEach(p2 => {
-                  const p2H = lordships[p2] || [];
-                  if (p1 < p2 && p2H.some(h => wealthH.includes(h)) && !p1H.some(h => [6,8,12].includes(h)) && !p2H.some(h => [6,8,12].includes(h))) {
-                      const involved = [p1, p2];
-                      yogas.push({ name: 'Dhana Yoga', type: 'Wealth', involved: involved, icon: 'BarChart2', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', desc: `${p1} and ${p2} combine wealth-giving houses in House ${placements[p1]}.` });
-                  }
-              });
-          }
-      });
-
-      const lagnaLord = houseLords[1];
-      if (lagnaLord && placements[lagnaLord] && [6, 8, 12].includes(placements[lagnaLord])) {
-          const involved = [lagnaLord];
-          const house = placements[lagnaLord];
-          yogas.push({ name: 'Arishta Yoga', type: 'Challenge', involved: involved, icon: 'ShieldAlert', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', desc: `Lagna Lord ${lagnaLord} is placed in a Dusthana (House ${house}). Indicates physical or mental strain.` });
-      }
-
-      if (placements['Moon'] && placements['Jupiter']) {
-          const jupFromMoon = ((rasiPlacements['Jupiter'] - rasiPlacements['Moon'] + 12) % 12) + 1;
-          if (kendras.includes(jupFromMoon)) {
-              const involved = ['Moon', 'Jupiter'];
-              yogas.push({ name: 'Gaja Kesari Yoga', type: 'Fame/Wisdom', involved: involved, icon: 'Sun', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', desc: `Jupiter is in a Kendra (House ${jupFromMoon}) from the Moon. Grants intelligence, eloquence, and lasting reputation.` });
-          }
-      }
-
-      const pmpRules = {
-          Mars: { name: 'Ruchaka Yoga', signs: [0, 7, 9], desc: 'Courage, leadership, and physical prowess.' },
-          Mercury: { name: 'Bhadra Yoga', signs: [2, 5], desc: 'Intellect, communication, and sharp business acumen.' },
-          Jupiter: { name: 'Hamsa Yoga', signs: [3, 8, 11], desc: 'Wisdom, purity, and spiritual elevation.' },
-          Venus: { name: 'Malavya Yoga', signs: [1, 6, 11], desc: 'Beauty, luxury, charisma, and artistic brilliance.' },
-          Saturn: { name: 'Sasha Yoga', signs: [6, 9, 10], desc: 'Discipline, authority, endurance, and mass influence.' }
-      };
-      Object.keys(pmpRules).forEach(planet => {
-          if (placements[planet] && kendras.includes(placements[planet]) && pmpRules[planet].signs.includes(rasiPlacements[planet])) {
-              const involved = [planet];
-              yogas.push({ name: pmpRules[planet].name, type: 'Mahapurusha', involved: involved, icon: 'Star', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', desc: `${planet} is in Kendra (House ${placements[planet]}) in its own/exalted sign. Grants: ${pmpRules[planet].desc}` });
-          }
-      });
-
-      if (placements['Moon']) {
-          const mRasi = rasiPlacements['Moon'];
-          const pIn2 = Object.keys(rasiPlacements).filter(p => p !== 'Sun' && p !== 'Moon' && rasiPlacements[p] === (mRasi + 1) % 12);
-          const pIn12 = Object.keys(rasiPlacements).filter(p => p !== 'Sun' && p !== 'Moon' && rasiPlacements[p] === (mRasi + 11) % 12);
-          const conjunct = getConjuncts('Moon').filter(p => p !== 'Sun');
-          if (pIn2.length === 0 && pIn12.length === 0 && conjunct.length === 0) {
-              const involved = ['Moon'];
-              yogas.push({ name: 'Kemadruma Yoga', type: 'Challenge', involved: involved, icon: 'Moon', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-300', desc: `Moon is isolated with no planets adjacent or conjunct. Can indicate deep mental isolation or emotional struggle.` });
-          }
-      }
-
-      const uniqueYogas = [];
-      const seen = new Set();
-      yogas.forEach(y => { if(!seen.has(y.desc)) { seen.add(y.desc); uniqueYogas.push(y); } });
-      return uniqueYogas;
-  },
+  calculateYogas,
 
   VEDIC_LORE: {
     planets: { Sun: "Soul, Ego, Father, Authority.", Moon: "Mind, Emotions, Mother, Comfort.", Mars: "Energy, Action, Courage, Siblings.", Mercury: "Intellect, Speech, Communication.", Jupiter: "Wisdom, Wealth, Optimism, Children.", Venus: "Love, Luxury, Arts, Marriage.", Saturn: "Karma, Discipline, Hard Work.", Rahu: "Worldly Desires, Illusion.", Ketu: "Spirituality, Detachment." },
