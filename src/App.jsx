@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Star, Info, Settings, Loader2, Search, Cloud, Plus, Cpu, AlertTriangle, X, Home, MessageCircle, Moon, Sun, Sparkles, Key, CheckCircle2, Compass, HelpCircle, BarChart2, ShieldAlert, Zap, BookOpen } from 'lucide-react';
 
+// 🚀 CUSTOM SANDBOX COMPONENT IMPORTS
+import AstroWatchView from './components/AstroWatchView';
+import AstroMatchView from './components/AstroMatchView'; // If you use it here as well
+import ProfileManager from './components/ProfileManager';
+import SearchableDropdown from './components/SearchableDropdown';
+
 // ==========================================
 // FIREBASE CLOUD SETUP
 // ==========================================
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "firebase/auth";
+import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
 
 // PASTE YOUR REAL KEYS HERE:
 const firebaseConfig = {
@@ -40,6 +46,36 @@ const safeStr = (str, delimiter) => {
     if (!str || typeof str !== 'string') return '';
     const parts = str.split(delimiter);
     return parts.length > 0 ? String(parts[0]) : '';
+};
+
+const generateProfileId = (profile = {}) => {
+  const name = String(profile.name || '').trim().toLowerCase().replace(/\s+/g, '_');
+  const dob = String(profile.dob || '').trim();
+  return encodeURIComponent(`${name}_${dob}`);
+};
+
+const normalizeProfile = (profile = {}) => {
+  const firstName = String(profile.firstName || profile.firstname || '').trim();
+  const lastName = String(profile.lastName || profile.lastname || '').trim();
+  const explicitName = String(profile.name || profile.fullName || profile.fullname || profile.displayName || '').trim();
+  const constructedName = `${firstName} ${lastName}`.trim();
+  const name = explicitName || constructedName || String(profile.city || profile.location || '').trim() || 'Unknown Profile';
+  const dob = String(profile.dob || profile.birthDate || profile.dateOfBirth || '').trim();
+  const time = String(profile.time || profile.tob || profile.birthTime || '12:00').trim();
+  const lat = Number(profile.lat ?? profile.latitude ?? profile.currentLat ?? profile.currentLatitude ?? 0);
+  const lon = Number(profile.lon ?? profile.longitude ?? profile.currentLon ?? profile.currentLongitude ?? 0);
+  const tzone = Number(profile.tzone ?? profile.tz ?? profile.timezone ?? profile.currentTzone ?? profile.currentTimezone ?? 5.5);
+
+  return {
+    ...profile,
+    name,
+    dob,
+    time,
+    lat: Number.isFinite(lat) ? lat : 0,
+    lon: Number.isFinite(lon) ? lon : 0,
+    tzone: Number.isFinite(tzone) ? tzone : 5.5,
+    id: profile.id || generateProfileId({ name, dob })
+  };
 };
 
 const HARDCODED_PROFILES = [];
@@ -88,441 +124,7 @@ const fetchWithRetry = async (url, options, retries = 5) => {
     }
 };
 
-// ==========================================
-// MODULE 1: OFFLINE EPHEMERIS ENGINE
-// ==========================================
-const OfflineEphemeris = {
-  norm: (deg) => ((deg % 360) + 360) % 360,
-  rad: (deg) => deg * Math.PI / 180,
-  deg: (rad) => rad * 180 / Math.PI,
-  
-  getDeltaT: function(year) { return 69.4 / 86400.0; },
-  getAyanamsa: function(T) { return 23.853055 + (1.396971 * T); },
-  
-  calcPlanet: function(d, L0, n, e, p, a) {
-     const M = this.norm(L0 + n * d - p);
-     const C = (180/Math.PI) * ( (2*e - 0.25*e*e*e)*Math.sin(this.rad(M)) + 1.25*e*e*Math.sin(this.rad(2*M)) );
-     const L_helio = this.norm(M + C + p);
-     const R = a * (1 - e*e) / (1 + e*Math.cos(this.rad(M+C)));
-     return { L: this.rad(L_helio), R: R };
-  },
-
-  getTrueLagna: function(dateObj, lat, lon, ayanamsa) {
-     const jd = (dateObj.getTime() / 86400000) + 2440587.5;
-     const t = (jd - 2451545.0) / 36525.0;
-     let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0);
-     const lst = this.norm(this.norm(gmst) + lon);
-     const eps = 23.439291 - 0.0130042 * t;
-     const y = Math.cos(this.rad(lst));
-     const x = -(Math.sin(this.rad(lst)) * Math.cos(this.rad(eps)) + Math.tan(this.rad(lat)) * Math.sin(this.rad(eps)));
-     return this.norm(this.norm(this.deg(Math.atan2(y, x))) - ayanamsa);
-  },
-
-  getSunTimes: function(dateObj, lat, lon, tzone) {
-      const start = new Date(dateObj.getFullYear(), 0, 0);
-      const diff = dateObj - start + (start.getTimezoneOffset() - dateObj.getTimezoneOffset()) * 60000;
-      const dY = Math.floor(diff / 86400000);
-      const gamma = (2 * Math.PI / 365) * (dY - 1 + 12 / 24);
-      const eqTime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
-      const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma);
-      const rL = lat * Math.PI / 180;
-      let cos_ha = (Math.cos(90.833 * Math.PI / 180) / (Math.cos(rL) * Math.cos(decl))) - Math.tan(rL) * Math.tan(decl);
-      const ha_deg = Math.acos(Math.max(-1, Math.min(1, cos_ha))) * 180 / Math.PI;
-      const n_utc = 720 - 4 * lon - eqTime;
-      const formatTime = (mins) => {
-          let lm = ((mins + (tzone * 60)) % 1440 + 1440) % 1440;
-          const h = Math.floor(lm / 60), m = Math.floor(lm % 60);
-          return { frac: lm / 60, timeStr: `${h === 0 ? 12 : (h > 12 ? h - 12 : h)}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'pm' : 'am'}` };
-      };
-      return { sunrise: formatTime(n_utc - 4 * ha_deg), sunset: formatTime(n_utc + 4 * ha_deg), noon: formatTime(n_utc), sunriseFrac: (n_utc - 4 * ha_deg)/60, sunsetFrac: (n_utc + 4 * ha_deg)/60 };
-  },
-
-  getPositions: function(dateObj, lat, lon) {
-     const jd_ut = (dateObj.getTime() / 86400000) + 2440587.5;
-     const T = (jd_ut - 2451545.0) / 36525.0; 
-     const d = jd_ut - 2451545.0; 
-     const ayanamsa = this.getAyanamsa(T);
-
-     const earth = this.calcPlanet(d, 100.46, 0.985647, 0.0167, 102.93, 1.000);
-     const e_prev = this.calcPlanet(d - 0.01, 100.46, 0.985647, 0.0167, 102.93, 1.000); 
-     const sun_geo = this.norm(this.deg(earth.L) + 180);
-
-     const L_prime = this.norm(218.3164477 + 481267.88123421 * T);
-     const D_elong = this.norm(297.8501921 + 445267.1114034 * T);
-     const M_sun   = this.norm(357.5291092 + 35999.0502909 * T);
-     const M_prime = this.norm(134.9633964 + 477198.8675055 * T);
-     const F_node  = this.norm(93.2720950 + 483202.0175233 * T);
-
-     const mT = [[6.288,0,1,0,0], [1.274,2,-1,0,0], [0.658,2,0,0,0], [0.213,0,2,0,0], [-0.185,0,0,1,0], [-0.114,0,0,0,2]];
-     let moon_geo = L_prime;
-     mT.forEach(t => moon_geo += t[0] * Math.sin(this.rad(t[1]*D_elong + t[2]*M_prime + t[3]*M_sun + t[4]*F_node)));
-     moon_geo = this.norm(moon_geo);
-
-     const omega = this.norm(125.04452 - 1934.136261 * T);
-     
-     const getGeo = (pD, dVal, eD) => {
-        const p = this.calcPlanet(dVal, ...pD);
-        const dx = p.R * Math.cos(p.L) - eD.R * Math.cos(eD.L);
-        const dy = p.R * Math.sin(p.L) - eD.R * Math.sin(eD.L);
-        return this.norm(this.deg(Math.atan2(dy, dx)));
-     };
-
-     const isR = (pD) => this.norm(getGeo(pD, d, earth) - getGeo(pD, d - 0.01, e_prev)) > 180;
-
-     const positions = [
-        { planet: 'Sun', l: sun_geo, isRetro: false }, { planet: 'Moon', l: moon_geo, isRetro: false },
-        { planet: 'Mars', l: getGeo([355.45, 0.524, 0.093, 336.04, 1.523], d, earth), isRetro: isR([355.45, 0.524, 0.093, 336.04, 1.523]) },
-        { planet: 'Mercury', l: getGeo([252.25, 4.092, 0.205, 77.45, 0.387], d, earth), isRetro: isR([252.25, 4.092, 0.205, 77.45, 0.387]) },
-        { planet: 'Jupiter', l: getGeo([34.40, 0.083, 0.048, 14.75, 5.204], d, earth), isRetro: isR([34.40, 0.083, 0.048, 14.75, 5.204]) },
-        { planet: 'Venus', l: getGeo([181.98, 1.602, 0.006, 131.56, 0.723], d, earth), isRetro: isR([181.98, 1.602, 0.006, 131.56, 0.723]) },
-        { planet: 'Saturn', l: getGeo([50.08, 0.033, 0.054, 92.43, 9.582], d, earth), isRetro: isR([50.08, 0.033, 0.054, 92.43, 9.582]) },
-        { planet: 'Rahu', l: omega, isRetro: true }, { planet: 'Ketu', l: this.norm(omega + 180), isRetro: true }
-     ];
-
-     const sidereal = positions.map(p => {
-         const deg = this.norm(p.l - ayanamsa);
-         return { ...p, fullDegree: deg, rasiIndex: Math.floor(deg / 30) };
-     });
-
-     const lagnaSidereal = this.getTrueLagna(dateObj, lat, lon, ayanamsa);
-     return { planets: sidereal, lagnaIndex: Math.floor(lagnaSidereal / 30), lagnaDegree: lagnaSidereal, moonDegree: this.norm(moon_geo - ayanamsa) };
-  }
-};
-
-// ==========================================
-// MODULE 2: DATA HANDLER & VEDIC LORE
-// ==========================================
-const AstroEngine = {
-  GRAHAS: ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'],
-  SIDEREAL_RASIS: ['Mesha (Aries)', 'Vrishabha (Taurus)', 'Mithuna (Gemini)', 'Karka (Cancer)', 'Simha (Leo)', 'Kanya (Virgo)', 'Tula (Libra)', 'Vrischika (Scorpio)', 'Dhanus (Sagittarius)', 'Makara (Capricorn)', 'Kumbha (Aquarius)', 'Meena (Pisces)'],
-  RASHI_ROMAN: ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'],
-  RASHI_LORDS: ['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter'],
-  NAKSHATRAS: ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshtha', 'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha', 'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati'],
-  NAK_SHORTS: ['ASW', 'BHA', 'KRI', 'ROH', 'MRI', 'ARD', 'PUN', 'PUS', 'ASL', 'MAG', 'PPH', 'UPH', 'HAS', 'CHI', 'SWA', 'VIS', 'ANU', 'JYE', 'MUL', 'PAS', 'UAS', 'SHR', 'DHA', 'SHA', 'PBP', 'UBP', 'REV'],
-  PLANET_SYMBOLS: { Sun: '☉\uFE0E', Moon: '☽\uFE0E', Mars: '♂\uFE0E', Mercury: '☿\uFE0E', Jupiter: '♃\uFE0E', Venus: '♀\uFE0E', Saturn: '♄\uFE0E', Rahu: '☊\uFE0E', Ketu: '☋\uFE0E' },
-  PLANET_SHORTS: { Sun: 'Su', Moon: 'Mo', Mars: 'Ma', Mercury: 'Me', Jupiter: 'Ju', Venus: 'Ve', Saturn: 'Sa', Rahu: 'Ra', Ketu: 'Ke' },
-  PLANET_TEXT_COLORS: { Sun: 'text-red-600', Moon: 'text-slate-500', Mars: 'text-red-800', Mercury: 'text-green-600', Jupiter: 'text-orange-500', Venus: 'text-fuchsia-500', Saturn: 'text-blue-600', Rahu: 'text-gray-600', Ketu: 'text-amber-800' },
-
-  FUNCTIONAL_ROLES: [
-    { ben: ['Sun','Moon','Jupiter','Mars'], mal: ['Mercury','Venus','Saturn'], mar: ['Venus'], bad: ['Saturn'] },
-    { ben: ['Saturn','Sun','Mercury','Venus'], mal: ['Jupiter','Moon','Mars'], mar: ['Mercury','Mars'], bad: ['Saturn'] },
-    { ben: ['Venus','Saturn','Mercury'], mal: ['Mars','Jupiter','Sun'], mar: ['Jupiter'], bad: ['Jupiter'] },
-    { ben: ['Mars','Jupiter','Moon'], mal: ['Venus','Mercury','Saturn'], mar: ['Saturn'], bad: ['Venus'] },
-    { ben: ['Sun','Mars','Jupiter'], mal: ['Mercury','Venus','Saturn'], mar: ['Mercury','Saturn'], bad: ['Mars'] },
-    { ben: ['Venus','Mercury'], mal: ['Mars','Jupiter','Moon'], mar: ['Venus','Jupiter'], bad: ['Jupiter'] },
-    { ben: ['Saturn','Mercury','Venus'], mal: ['Jupiter','Sun','Mars'], mar: ['Mars'], bad: ['Sun'] },
-    { ben: ['Jupiter','Moon','Sun','Mars'], mal: ['Mercury','Venus','Saturn'], mar: ['Jupiter','Venus'], bad: ['Moon'] },
-    { ben: ['Sun','Mars','Jupiter'], mal: ['Venus','Mercury','Saturn'], mar: ['Saturn','Mercury'], bad: ['Mercury'] },
-    { ben: ['Venus','Mercury','Saturn'], mal: ['Mars','Jupiter','Moon'], mar: ['Saturn'], bad: ['Mars'] },
-    { ben: ['Venus','Sun','Mars','Saturn'], mal: ['Jupiter','Moon'], mar: ['Jupiter'], bad: ['Venus'] },
-    { ben: ['Moon','Mars','Jupiter'], mal: ['Sun','Venus','Saturn','Mercury'], mar: ['Mars','Mercury'], bad: ['Mercury'] }
-  ],
-
-  getD9RasiIndex: (deg) => { const s = ((deg % 360) + 360) % 360; return ([0, 9, 6, 3][Math.floor(s / 30) % 4] + Math.floor((s % 30) / (40 / 12))) % 12; },
-  getD6RasiIndex: (deg) => { const s = ((deg % 360) + 360) % 360; return ((Math.floor(s / 30) % 2 === 0 ? 0 : 6) + Math.floor((s % 30) / 5)) % 12; },
-  getD10RasiIndex: (deg) => { const s = ((deg % 360) + 360) % 360; const r = Math.floor(s / 30); return ((r % 2 === 0 ? r : r + 8) + Math.floor((s % 30) / 3)) % 12; },
-  getD20RasiIndex: (deg) => { const s = ((deg % 360) + 360) % 360; const r = Math.floor(s / 30); return (([0, 8, 4][r % 3]) + Math.floor((s % 30) / 1.5)) % 12; },
-
-  // ASHTAKAVARGA ENGINE
-  calculateAshtakavarga: (planets, lagnaIndex) => {
-      const placements = { Asc: lagnaIndex };
-      planets.forEach(p => { if (['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn'].includes(p.planet)) placements[p.planet] = p.rasiIndex; });
-      
-      const AV_RULES = {
-        Sun: { Sun:[1,2,4,7,8,9,10,11], Moon:[3,6,10,11], Mars:[1,2,4,7,8,9,10,11], Mercury:[3,5,6,9,10,11,12], Jupiter:[5,6,9,11], Venus:[6,7,12], Saturn:[1,2,4,7,8,9,10,11], Asc:[3,4,6,10,11,12] },
-        Moon: { Sun:[3,6,7,8,10,11], Moon:[1,3,6,7,10,11], Mars:[2,3,5,6,9,10,11], Mercury:[1,3,4,5,7,8,10,11], Jupiter:[1,4,7,8,10,11,12], Venus:[3,4,5,7,9,10,11], Saturn:[3,5,6,11], Asc:[3,6,10,11] },
-        Mars: { Sun:[3,5,6,10,11], Moon:[3,6,11], Mars:[1,2,4,7,8,10,11], Mercury:[3,5,6,11], Jupiter:[6,10,11,12], Venus:[6,8,11,12], Saturn:[1,4,7,8,9,10,11], Asc:[1,3,6,10,11] },
-        Mercury: { Sun:[5,6,9,11,12], Moon:[2,4,6,8,10,11], Mars:[1,2,4,7,8,9,10,11], Mercury:[1,3,5,6,9,10,11,12], Jupiter:[6,8,11,12], Venus:[1,2,3,4,5,8,9,11], Saturn:[1,2,4,7,8,9,10,11], Asc:[1,2,4,6,8,10,11] },
-        Jupiter: { Sun:[1,2,3,4,7,8,9,10,11], Moon:[2,5,7,9,11], Mars:[1,2,4,7,8,10,11], Mercury:[1,2,4,5,6,9,10,11], Jupiter:[1,2,3,4,7,8,10,11], Venus:[2,5,6,9,10,11], Saturn:[3,5,6,12], Asc:[1,2,4,5,6,9,10,11] },
-        Venus: { Sun:[8,11,12], Moon:[1,2,3,4,5,8,9,11,12], Mars:[3,5,6,9,11,12], Mercury:[3,5,6,9,11], Jupiter:[5,8,9,10,11], Venus:[1,2,3,4,5,8,9,10,11], Saturn:[3,4,5,8,9,10,11], Asc:[1,2,3,4,5,8,9,11] },
-        Saturn: { Sun:[1,2,4,7,8,10,11], Moon:[3,6,11], Mars:[3,5,6,10,11], Mercury:[6,8,9,10,11,12], Jupiter:[5,6,11,12], Venus:[6,11,12], Saturn:[3,5,6,11], Asc:[1,3,4,6,10,11] }
-      };
-
-      const SAV = Array(12).fill(0);
-      const BAV = {};
-      
-      Object.keys(AV_RULES).forEach(targetPlanet => {
-          BAV[targetPlanet] = Array(12).fill(0);
-          Object.keys(AV_RULES[targetPlanet]).forEach(sourceEntity => {
-              const sourceRasi = placements[sourceEntity];
-              if (sourceRasi !== undefined) {
-                  AV_RULES[targetPlanet][sourceEntity].forEach(houseOffset => {
-                      const targetRasi = (sourceRasi + houseOffset - 1) % 12;
-                      BAV[targetPlanet][targetRasi]++;
-                      SAV[targetRasi]++;
-                  });
-              }
-          });
-      });
-      return { SAV, BAV };
-  },
-
-  calculateShadbala: (planets, lagnaDegree, timeObj, sunTimes) => {
-      const scores = {};
-      if (!Array.isArray(planets)) return scores;
-      const EXALTATION_DEG = { Sun: 10, Moon: 33, Mars: 298, Mercury: 165, Jupiter: 95, Venus: 357, Saturn: 200 };
-      const DIK_DEG = { Sun: (lagnaDegree + 270) % 360, Mars: (lagnaDegree + 270) % 360, Jupiter: lagnaDegree, Mercury: lagnaDegree, Saturn: (lagnaDegree + 180) % 360, Moon: (lagnaDegree + 90) % 360, Venus: (lagnaDegree + 90) % 360 };
-      const NAISARGIKA = { Sun: 60, Moon: 51.4, Venus: 42.8, Jupiter: 34.2, Mercury: 25.7, Mars: 17.1, Saturn: 8.5 };
-      const getAngle = (d1, d2) => { let diff = Math.abs(d1 - d2) % 360; return diff > 180 ? 360 - diff : diff; };
-
-      const sunPlanet = planets.find(p => p && p.planet === 'Sun');
-      const moonPlanet = planets.find(p => p && p.planet === 'Moon');
-      let pakshaValue = 30; 
-      if (sunPlanet && moonPlanet) {
-          const mPA = (moonPlanet.fullDegree - sunPlanet.fullDegree + 360) % 360;
-          pakshaValue = mPA <= 180 ? mPA / 3 : (360 - mPA) / 3; 
-      }
-
-      let isDay = true;
-      if (sunTimes && timeObj) {
-          const currentMins = (timeObj.getUTCHours() + 5.5) * 60 + timeObj.getUTCMinutes(); 
-          isDay = currentMins >= (sunTimes.sunriseFrac * 60) && currentMins <= (sunTimes.sunsetFrac * 60);
-      }
-
-      planets.forEach(p => {
-          if (!p || !EXALTATION_DEG[p.planet]) return; 
-          const sthana = (getAngle(p.fullDegree, (EXALTATION_DEG[p.planet] + 180) % 360) / 180) * 60;
-          const dik = ((180 - getAngle(p.fullDegree, DIK_DEG[p.planet])) / 180) * 60;
-          let kaala = ['Moon', 'Jupiter', 'Venus', 'Mercury'].includes(p.planet) ? pakshaValue : (60 - pakshaValue);
-          if (p.planet === 'Mercury') kaala += 60;
-          else if (isDay && ['Sun', 'Jupiter', 'Venus'].includes(p.planet)) kaala += 60;
-          else if (!isDay && ['Moon', 'Mars', 'Saturn'].includes(p.planet)) kaala += 60;
-          let chesta = p.isRetro ? 60 : 0;
-          if (p.planet === 'Sun') chesta = 30; if (p.planet === 'Moon') chesta = pakshaValue;
-
-          const total = Math.round(sthana + dik + kaala + chesta + (NAISARGIKA[p.planet] || 0));
-          scores[p.planet] = { total, percentage: Math.round((total / 300) * 100), sthana: Math.round(sthana), dik: Math.round(dik), kaala: Math.round(kaala), chesta: Math.round(chesta), nais: Math.round(NAISARGIKA[p.planet] || 0) };
-      });
-      return scores;
-  },
-
-  calculateYogas: (planets, lagnaIndex) => {
-      if (isNaN(lagnaIndex) || !planets || planets.length === 0) return [];
-      const yogas = [];
-      const placements = {}; 
-      const rasiPlacements = {}; 
-      const houseLords = {}; 
-      const lordships = {}; 
-
-      planets.forEach(p => {
-          if(p && p.planet !== 'Rahu' && p.planet !== 'Ketu') {
-              placements[p.planet] = ((p.rasiIndex - lagnaIndex + 12) % 12) + 1;
-              rasiPlacements[p.planet] = p.rasiIndex;
-          }
-      });
-
-      for (let i = 1; i <= 12; i++) {
-          const rasi = (lagnaIndex + i - 1) % 12;
-          const lord = AstroEngine.RASHI_LORDS[rasi];
-          houseLords[i] = lord;
-          if (!lordships[lord]) lordships[lord] = [];
-          lordships[lord].push(i);
-      }
-
-      const getConjuncts = (pName) => Object.keys(placements).filter(p => placements[p] === placements[pName] && p !== pName);
-
-      const checkedExchanges = new Set();
-      Object.keys(placements).forEach(p1 => {
-          const h1 = placements[p1];
-          const disp1 = houseLords[h1];
-          if (disp1 && disp1 !== p1 && placements[disp1]) {
-              const h2 = placements[disp1];
-              const disp2 = houseLords[h2];
-              if (disp2 === p1 && !checkedExchanges.has(p1) && !checkedExchanges.has(disp1)) {
-                  const involved = [p1, disp1];
-                  yogas.push({ name: 'Parivartana Yoga', type: 'Exchange', involved: involved, icon: 'Zap', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', desc: `Mutual exchange between ${p1} (Lord of ${lordships[p1].join(',')}) and ${disp1} (Lord of ${lordships[disp1].join(',')}). Highly powerful connection.` });
-                  checkedExchanges.add(p1);
-                  checkedExchanges.add(disp1);
-              }
-          }
-      });
-
-      const kendras = [1, 4, 7, 10];
-      const trikonas = [1, 5, 9];
-      Object.keys(placements).forEach(p1 => {
-          const p1H = lordships[p1] || [];
-          if (p1H.some(h => kendras.includes(h))) {
-              getConjuncts(p1).forEach(p2 => {
-                  if (p1 < p2 && (lordships[p2] || []).some(h => trikonas.includes(h))) {
-                      const involved = [p1, p2];
-                      yogas.push({ name: 'Raja Yoga', type: 'Power/Status', involved: involved, icon: 'Star', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', desc: `${p1} and ${p2} combine Kendra and Trikona energies in House ${placements[p1]}.` });
-                  }
-              });
-          }
-      });
-
-      const wealthH = [1, 2, 5, 9, 11];
-      Object.keys(placements).forEach(p1 => {
-          const p1H = lordships[p1] || [];
-          if (p1H.some(h => wealthH.includes(h))) {
-              getConjuncts(p1).forEach(p2 => {
-                  const p2H = lordships[p2] || [];
-                  if (p1 < p2 && p2H.some(h => wealthH.includes(h)) && !p1H.some(h => [6,8,12].includes(h)) && !p2H.some(h => [6,8,12].includes(h))) {
-                      const involved = [p1, p2];
-                      yogas.push({ name: 'Dhana Yoga', type: 'Wealth', involved: involved, icon: 'BarChart2', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', desc: `${p1} and ${p2} combine wealth-giving houses in House ${placements[p1]}.` });
-                  }
-              });
-          }
-      });
-
-      const lagnaLord = houseLords[1];
-      if (lagnaLord && placements[lagnaLord] && [6, 8, 12].includes(placements[lagnaLord])) {
-          const involved = [lagnaLord];
-          const house = placements[lagnaLord];
-          yogas.push({ name: 'Arishta Yoga', type: 'Challenge', involved: involved, icon: 'ShieldAlert', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', desc: `Lagna Lord ${lagnaLord} is placed in a Dusthana (House ${house}). Indicates physical or mental strain.` });
-      }
-
-      if (placements['Moon'] && placements['Jupiter']) {
-          const jupFromMoon = ((rasiPlacements['Jupiter'] - rasiPlacements['Moon'] + 12) % 12) + 1;
-          if (kendras.includes(jupFromMoon)) {
-              const involved = ['Moon', 'Jupiter'];
-              yogas.push({ name: 'Gaja Kesari Yoga', type: 'Fame/Wisdom', involved: involved, icon: 'Sun', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', desc: `Jupiter is in a Kendra (House ${jupFromMoon}) from the Moon. Grants intelligence, eloquence, and lasting reputation.` });
-          }
-      }
-
-      const pmpRules = {
-          Mars: { name: 'Ruchaka Yoga', signs: [0, 7, 9], desc: 'Courage, leadership, and physical prowess.' },
-          Mercury: { name: 'Bhadra Yoga', signs: [2, 5], desc: 'Intellect, communication, and sharp business acumen.' },
-          Jupiter: { name: 'Hamsa Yoga', signs: [3, 8, 11], desc: 'Wisdom, purity, and spiritual elevation.' },
-          Venus: { name: 'Malavya Yoga', signs: [1, 6, 11], desc: 'Beauty, luxury, charisma, and artistic brilliance.' },
-          Saturn: { name: 'Sasha Yoga', signs: [6, 9, 10], desc: 'Discipline, authority, endurance, and mass influence.' }
-      };
-      Object.keys(pmpRules).forEach(planet => {
-          if (placements[planet] && kendras.includes(placements[planet]) && pmpRules[planet].signs.includes(rasiPlacements[planet])) {
-              const involved = [planet];
-              yogas.push({ name: pmpRules[planet].name, type: 'Mahapurusha', involved: involved, icon: 'Star', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', desc: `${planet} is in Kendra (House ${placements[planet]}) in its own/exalted sign. Grants: ${pmpRules[planet].desc}` });
-          }
-      });
-
-      if (placements['Moon']) {
-          const mRasi = rasiPlacements['Moon'];
-          const pIn2 = Object.keys(rasiPlacements).filter(p => p !== 'Sun' && p !== 'Moon' && rasiPlacements[p] === (mRasi + 1) % 12);
-          const pIn12 = Object.keys(rasiPlacements).filter(p => p !== 'Sun' && p !== 'Moon' && rasiPlacements[p] === (mRasi + 11) % 12);
-          const conjunct = getConjuncts('Moon').filter(p => p !== 'Sun');
-          if (pIn2.length === 0 && pIn12.length === 0 && conjunct.length === 0) {
-              const involved = ['Moon'];
-              yogas.push({ name: 'Kemadruma Yoga', type: 'Challenge', involved: involved, icon: 'Moon', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-300', desc: `Moon is isolated with no planets adjacent or conjunct. Can indicate deep mental isolation or emotional struggle.` });
-          }
-      }
-
-      const uniqueYogas = [];
-      const seen = new Set();
-      yogas.forEach(y => { if(!seen.has(y.desc)) { seen.add(y.desc); uniqueYogas.push(y); } });
-      return uniqueYogas;
-  },
-
-  VEDIC_LORE: {
-    planets: { Sun: "Soul, Ego, Father, Authority.", Moon: "Mind, Emotions, Mother, Comfort.", Mars: "Energy, Action, Courage, Siblings.", Mercury: "Intellect, Speech, Communication.", Jupiter: "Wisdom, Wealth, Optimism, Children.", Venus: "Love, Luxury, Arts, Marriage.", Saturn: "Karma, Discipline, Hard Work.", Rahu: "Worldly Desires, Illusion.", Ketu: "Spirituality, Detachment." },
-    rashis: ["Action, courage, initiation.", "Stability, wealth, family.", "Communication, duality, intellect.", "Emotions, home, nurturing.", "Leadership, creativity, royalty.", "Service, perfectionism, detail.", "Balance, relationships, harmony.", "Transformation, intensity, depth.", "Philosophy, travel, optimism.", "Ambition, structure, duty.", "Innovation, networks, society.", "Intuition, spirituality, endings."],
-    houses: ["Self, physical body, life path.", "Wealth, speech, early education.", "Courage, efforts, short travels.", "Mother, home, inner peace.", "Children, creativity, intellect.", "Debt, diseases, enemies, service.", "Marriage, partnerships, public image.", "Longevity, transformations, secrets.", "Luck, religion, higher education.", "Career, reputation, karma.", "Gains, large networks, desires.", "Expenses, spirituality, isolation."],
-    nakshatras: [
-      "Speed, initiation, healing arts.", "Creation, transformation, restraint.", "Purifying fire, ambition, leadership.", "Growth, fertility, immense beauty.", "Seeking, wandering, gentleness.", "Emotional storms, deep cleansing.", "Renewal, returning home, safety.", "Spiritual devotion, nurturing.", "Mystical wisdom, intense focus.", "Royalty, ancestral connection.", "Rest, relaxation, creative joy.", "Patronage, societal duties.", "Skill, craftsmanship, detail.", "Brilliance, visual arts, order.", "Flexibility, continuous movement.", "Purpose, branching out, triumph.", "Devotion, friendship, universal love.", "Seniority, protection, occult.", "Deep investigation, getting to the root.", "Early victories, pride, conviction.", "Unchallenged victory, deep endurance.", "Listening, learning, oral traditions.", "Wealth, adaptability, musical rhythm.", "Concealment, boundaries, complex healing.", "Intense transformation, internal shifts.", "Foundation, discipline, deep wisdom.", "Safe travels, nourishment, final liberation."
-    ]
-  },
-
-  getPanchang: (sunDeg, moonDeg, dateObj) => {
-    const tNames = ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi","Purnima","Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi","Amavasya"];
-    const varaNames = ["Ravivara","Somavara","Mangalavara","Budhavara","Guruvara","Shukravara","Shanivara"];
-    const yogaNames = ["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti","Shula","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata","Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"];
-    const lunarMonths = ["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashvin","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
-
-    const elongation = (moonDeg - sunDeg + 360) % 360;
-    const tNum = Math.floor(elongation / 12) + 1;
-    
-    const sRasi = Math.floor(sunDeg / 30);
-    const lMonthIdx = (sRasi + 1) % 12; 
-    const lMonth = lunarMonths[lMonthIdx] || 'Unknown';
-
-    const gY = dateObj.getFullYear();
-    const vSamvat = gY + 57;
-    const sSamvat = gY - 78;
-
-    return { 
-      vara: String(varaNames[dateObj.getDay()] || 'Unknown'), 
-      tithi: `${tNames[Math.max(0, (tNum || 1) - 1)] || 'Unknown'} - ${tNum <= 15 ? 'Shukla' : 'Krishna'}`, 
-      nakshatra: String(safeStr(AstroEngine.NAKSHATRAS[Math.floor(moonDeg / (40/3))], ',')), 
-      yoga: String(yogaNames[Math.floor(((moonDeg + sunDeg) % 360) / (40/3))] || 'Unknown'), 
-      karana: Math.floor(elongation / 6) === 0 ? "Kintughna" : "Standard",
-      month: lMonth,
-      year: `VS ${vSamvat} / S. ${sSamvat}`
-    };
-  },
-
-  getDasaData: (birthData, targetDate, moonDegree) => {
-    const DASA_YEARS = { Ketu: 7, Venus: 20, Sun: 6, Moon: 10, Mars: 7, Rahu: 18, Jupiter: 16, Saturn: 19, Mercury: 17 };
-    const DASA_SEQ = ['Ketu', 'Venus', 'Sun', 'Moon', 'Mars', 'Rahu', 'Jupiter', 'Saturn', 'Mercury'];
-    
-    const nakExact = moonDegree / (40 / 3);
-    const firstLordIdx = Math.floor(nakExact) % 9;
-    
-    const dobStr = birthData.dob || '2000-01-01';
-    const timeStr = birthData.time || '12:00';
-    let mdStart = new Date(new Date(`${dobStr}T${timeStr}:00`).getTime() - ((nakExact - Math.floor(nakExact)) * DASA_YEARS[DASA_SEQ[firstLordIdx]] * 365.2425 * 86400000));
-    
-    let activeMD = { lord: DASA_SEQ[firstLordIdx], years: DASA_YEARS[DASA_SEQ[firstLordIdx]] };
-    let activeMDIdx = firstLordIdx;
-    
-    for (let i = 0; i < 9; i++) {
-        const lIdx = (firstLordIdx + i) % 9;
-        const mdEnd = new Date(mdStart.getTime() + DASA_YEARS[DASA_SEQ[lIdx]] * 365.2425 * 86400000);
-        if (new Date(targetDate) >= mdStart && new Date(targetDate) < mdEnd) { activeMD = { lord: DASA_SEQ[lIdx], start: mdStart, years: DASA_YEARS[DASA_SEQ[lIdx]] }; activeMDIdx = lIdx; break; }
-        mdStart = new Date(mdEnd);
-    }
-    
-    let adStart = new Date(activeMD.start);
-    let activeAD = { lord: activeMD.lord, years: (activeMD.years * DASA_YEARS[activeMD.lord]) / 120 };
-    let activeADIdx = activeMDIdx;
-    
-    for (let i = 0; i < 9; i++) {
-        const lIdx = (activeMDIdx + i) % 9;
-        const adYrs = (activeMD.years * DASA_YEARS[DASA_SEQ[lIdx]]) / 120;
-        const adEnd = new Date(adStart.getTime() + adYrs * 365.2425 * 86400000);
-        if (new Date(targetDate) >= adStart && new Date(targetDate) < adEnd) { activeAD = { lord: DASA_SEQ[lIdx], start: adStart }; activeADIdx = lIdx; break; }
-        adStart = new Date(adEnd);
-    }
-
-    let pdStart = new Date(activeAD.start);
-    let activePD = { lord: activeAD.lord, start: pdStart };
-    for (let i = 0; i < 9; i++) {
-        const lIdx = (activeADIdx + i) % 9;
-        const pdEnd = new Date(pdStart.getTime() + ((activeAD.years * DASA_YEARS[DASA_SEQ[lIdx]]) / 120) * 365.2425 * 86400000);
-        if (new Date(targetDate) >= pdStart && new Date(targetDate) < pdEnd) { activePD = { lord: DASA_SEQ[lIdx], start: pdStart }; break; }
-        pdStart = new Date(pdEnd);
-    }
-
-    let upcomingList = [];
-    let adIterStart = new Date(activeMD.start);
-    for (let i = 0; i < 9; i++) {
-        const lIdx = (activeMDIdx + i) % 9;
-        const adEnd = new Date(adIterStart.getTime() + ((activeMD.years * DASA_YEARS[DASA_SEQ[lIdx]]) / 120) * 365.2425 * 86400000);
-        upcomingList.push({ planets: [activeMD.lord, DASA_SEQ[lIdx]], dateStr: adIterStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) });
-        adIterStart = new Date(adEnd);
-    }
-
-    return { current: { mahadasha: activeMD.lord, antardasha: activeAD.lord, pratyantardasha: activePD.lord, pdStart: activePD.start }, upcoming: upcomingList };
-  },
-
-  callGemini: async (prompt, key, level = 'beginner', language = 'English') => {
-    if (!key || key.length < 10) return { error: "Missing API Key." };
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-    const sysPrompt = level === 'expert' ? `Expert Parashari Astrologer. 3-4 sentence insights using Vedic terms. Must write in ${language}.` : `Warm intuitive astrologer. Plain language only. No jargon. Must write in ${language}.`;
-    
-    try {
-      const data = await fetchWithRetry(url, { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ 
-              contents: [{ parts: [{ text: prompt }] }], 
-              systemInstruction: { parts: [{ text: sysPrompt }] } 
-          }) 
-      });
-      if (data.error) return { error: String(data.error.message || 'API Error') };
-      return { text: String(data.candidates?.[0]?.content?.parts?.[0]?.text || '') };
-    } catch (e) { 
-      return { error: e.message || "Connection error. Check API key." }; 
-    }
-  }
-};
+import { OfflineEphemeris, AstroEngine, getPositionsForProfile } from './utils/ephemerisEngine';
 
 // ==========================================
 // UI COMPONENTS
@@ -576,16 +178,45 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
   };
 
   const handleNewClient = () => setFormData(emptyClient);
-  const handleClientSelect = (e) => { const idx = parseInt(e.target.value); if (idx >= 0 && savedProfiles[idx]) setFormData({ ...emptyClient, ...savedProfiles[idx] }); };
-  const handleDeleteClient = () => { onDeleteProfile(formData); const remaining = savedProfiles.filter(p => p && p.name && !(p.name === formData.name && p.dob === formData.dob)); setFormData(remaining.length > 0 ? { ...emptyClient, ...remaining[0] } : emptyClient); };
+  const handleClientSelect = (e) => {
+    const selectedId = e.target.value;
+    const selected = savedProfiles.find(profile => profile.id === selectedId);
+    if (selected) setFormData({ ...emptyClient, ...selected });
+  };
+  const handleDeleteClient = () => {
+    onDeleteProfile(formData);
+    const remaining = savedProfiles.filter(p => p && p.id !== generateProfileId(formData));
+    setFormData(remaining.length > 0 ? { ...emptyClient, ...remaining[0] } : emptyClient);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Keep for backward compatibility: Save + enter app
     if (formData && formData.name && formData.dob) {
         onSaveProfile(formData);
         safeStorage.set('astroFormData', formData);
         safeStorage.set('geminiApiKey', geminiKey);
-        onStartApp({ formData, geminiKey });
+        if (typeof onStartApp === 'function') onStartApp({ formData, geminiKey });
+    }
+  };
+
+  const handleSaveOnly = () => {
+    if (formData && formData.name && formData.dob) {
+      onSaveProfile(formData);
+      safeStorage.set('astroFormData', formData);
+      safeStorage.set('geminiApiKey', geminiKey);
+    }
+  };
+
+  const handleSaveAndBack = () => {
+    if (formData && formData.name && formData.dob) {
+      onSaveProfile(formData);
+      safeStorage.set('astroFormData', formData);
+      safeStorage.set('geminiApiKey', geminiKey);
+      if (typeof onStartApp === 'function') {
+        // Call parent navigation handler. Parent may expect the saved data (setUserData) or just navigate (setActiveModule)
+        try { onStartApp({ formData, geminiKey }); } catch (e) { try { onStartApp(); } catch (ee) {} }
+      }
     }
   };
 
@@ -593,9 +224,9 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
     <div className="flex flex-col items-center justify-center h-full p-6 bg-[#fdfde8] text-slate-800 rounded-xl shadow-2xl max-w-md mx-auto my-10 border border-slate-300 relative z-50">
       <div className="flex justify-between items-center w-full mb-4">
         <div className="flex gap-3 items-center">
-          <LogoSVG />
-          <h2 className="text-2xl font-bold font-serif text-green-800">Initialize AstroWatch</h2>
-        </div>
+            <LogoSVG />
+            <h2 className="text-2xl font-bold font-serif text-green-800">Profile</h2>
+          </div>
         <button type="button" onClick={() => setShowHelp(true)} className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-2 rounded-full transition-colors shadow-sm bg-white border border-blue-200" title="Quick Start Guide">
           <HelpCircle size={20} />
         </button>
@@ -616,7 +247,7 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="w-full space-y-4">
+      <form onSubmit={(e) => e.preventDefault()} className="w-full space-y-4">
         <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
           <div className="flex items-center justify-between mb-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-blue-800 uppercase"><Key size={12}/> Gemini API Key</label>
@@ -647,11 +278,10 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
             <div className="flex gap-2 items-center">
             <select className="flex-1 p-2 bg-white rounded border border-slate-300 focus:border-green-500 outline-none text-sm shadow-sm font-bold text-green-900" onChange={handleClientSelect} value="-1">
               <option value="-1" disabled>-- Select a Profile --</option>
-              {savedProfiles.map((client, index) => {
+              {savedProfiles.map((client) => {
                 if (!client || !client.name) return null;
-                // Filter out names that don't match the search query
                 if (profileSearch && !client.name.toLowerCase().includes(profileSearch.toLowerCase())) return null;
-                return <option key={index} value={String(index)}>{String(client.name)}</option>;
+                return <option key={client.id} value={client.id}>{String(client.name)}</option>;
               })}
             </select>
             <button type="button" onClick={handleDeleteClient} className="p-2 bg-red-100 text-red-600 hover:bg-red-200 border border-red-200 rounded shadow-sm transition-colors" title="Delete Profile">
@@ -776,12 +406,139 @@ const BirthForm = ({ onStartApp, savedProfiles, onSaveProfile, onDeleteProfile, 
           ) : null}
         </div>
 
-        <button type="submit" className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded shadow-md transition-colors mt-6 text-sm uppercase tracking-wider font-serif">
-          {savedProfiles?.some(profile => profile.name === formData?.name) 
-  ? "GO TO VEDICASTRO 🚀" 
-  : "SAVE TO CLOUD & GO TO VEDICASTRO 🚀"}
-        </button>
+        <div className="mt-6 flex gap-3">
+          <button type="button" onClick={handleSaveOnly} className="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-4 rounded shadow-md transition-colors text-sm uppercase tracking-wider font-serif">
+            {savedProfiles?.some(profile => profile.id === generateProfileId(formData)) ? "Save / Update" : "Save to Cloud"}
+          </button>
+
+          <button type="button" onClick={handleSaveAndBack} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 px-4 rounded shadow-sm transition-colors text-sm uppercase tracking-wider">
+            Back to Hub
+          </button>
+        </div>
       </form>
+    </div>
+  );
+};
+
+const ProfileLibrary = ({ savedProfiles, onSaveProfile, onDeleteProfile, onLoadProfile, onBack }) => {
+  const emptyClient = { name: '', dob: '', time: '', city: '', state: '', lat: 17.385, lon: 78.4867, tzone: 5.5, currentCity: '', currentLat: 17.385, currentLon: 78.4867, currentTzone: 5.5, astroLevel: 'beginner', language: 'English', chartStyle: 'North Indian', maritalStatus: 'Unknown', careerStatus: 'Unknown', parentsStatus: 'Unknown', children: 'Unknown', lifeContext: '' };
+  const [editProfile, setEditProfile] = useState(() => (savedProfiles?.[0] ? { ...savedProfiles[0] } : emptyClient));
+
+  useEffect(() => {
+    if (savedProfiles?.length > 0) setEditProfile(prev => {
+      if (!prev?.id) return { ...savedProfiles[0] };
+      const selected = savedProfiles.find(p => p.id === prev.id);
+      return selected ? { ...selected } : { ...savedProfiles[0] };
+    });
+  }, [savedProfiles]);
+
+  const handleSelect = (e) => {
+    const targetId = e.target.value;
+    const selected = savedProfiles.find(profile => profile.id === targetId);
+    if (selected) setEditProfile({ ...selected });
+  };
+
+  const handleChange = (key, value) => setEditProfile(prev => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    if (!editProfile?.name || !editProfile?.dob) return;
+    onSaveProfile(editProfile);
+  };
+
+  const handleDelete = () => {
+    if (!editProfile?.name || !editProfile?.dob) return;
+    onDeleteProfile(editProfile);
+    const remaining = savedProfiles.filter(p => p.id !== editProfile.id);
+    setEditProfile(remaining.length > 0 ? { ...remaining[0] } : emptyClient);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f2f2e9] text-slate-900 p-6">
+      <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-3xl border border-slate-200 overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-4 p-6 bg-slate-50 border-b border-slate-200">
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-900">Profile Library</h2>
+            <p className="text-sm text-slate-600 mt-2">Manage your saved natal profiles and sync them between local storage and Firebase.</p>
+          </div>
+          <div className="ml-auto flex flex-wrap gap-3 items-center">
+            <button onClick={onBack} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-800 font-semibold">← Back</button>
+            <button onClick={() => setEditProfile(emptyClient)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold">New Profile</button>
+            <button onClick={() => onLoadProfile(editProfile)} className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold">Load to AstroWatch</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 p-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">Saved Profiles</h3>
+              <span className="text-xs uppercase tracking-widest text-slate-500">{savedProfiles?.length || 0}</span>
+            </div>
+            <div className="space-y-2">
+              {savedProfiles && savedProfiles.length > 0 ? savedProfiles.map(profile => (
+                <button key={profile.id} type="button" onClick={() => setEditProfile({ ...profile })} className={`w-full text-left p-3 rounded-2xl border ${profile.id === editProfile?.id ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'} hover:border-emerald-400 transition-all`}>
+                  <div className="font-semibold text-slate-800">{profile.name}</div>
+                  <div className="text-xs text-slate-500">{profile.dob} • {profile.time || 'No time'}</div>
+                </button>
+              )) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">No saved profiles found yet.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Profile</label>
+                <select value={editProfile?.id || ''} onChange={handleSelect} className="w-full rounded-xl border border-slate-200 p-3 text-sm bg-slate-50 focus:border-emerald-500 outline-none">
+                  <option value="">-- Choose existing profile --</option>
+                  {savedProfiles.map(profile => (
+                    <option key={profile.id} value={profile.id}>{profile.name} • {profile.dob}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end gap-3">
+                <button type="button" onClick={handleSave} className="w-full px-4 py-3 bg-emerald-600 text-white rounded-2xl font-semibold hover:bg-emerald-700">Save / Update</button>
+                <button type="button" onClick={handleDelete} className="w-full px-4 py-3 bg-rose-100 text-rose-700 rounded-2xl font-semibold hover:bg-rose-200">Delete</button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Full Name</label>
+                <input value={editProfile.name || ''} onChange={(e) => handleChange('name', e.target.value)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Date of Birth</label>
+                <input type="date" value={editProfile.dob || ''} onChange={(e) => handleChange('dob', e.target.value)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Time of Birth</label>
+                <input type="time" value={editProfile.time || ''} onChange={(e) => handleChange('time', e.target.value)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Time Zone</label>
+                <input type="number" step="0.25" value={editProfile.tzone || ''} onChange={(e) => handleChange('tzone', parseFloat(e.target.value) || 0)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Latitude</label>
+                <input type="number" step="0.0001" value={editProfile.lat || ''} onChange={(e) => handleChange('lat', parseFloat(e.target.value) || 0)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Longitude</label>
+                <input type="number" step="0.0001" value={editProfile.lon || ''} onChange={(e) => handleChange('lon', parseFloat(e.target.value) || 0)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-xs text-slate-600 uppercase font-bold mb-1">Current City / Notes</label>
+              <input value={editProfile.currentCity || ''} onChange={(e) => handleChange('currentCity', e.target.value)} className="w-full rounded-2xl border border-slate-200 p-3 text-sm outline-none focus:border-emerald-500" placeholder="Current City" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -952,10 +709,10 @@ const UniversalGateway = ({ onSelectPath }) => {
           </div>
         </button>
         
-        {/* PATH 3: ASTROWATCH (EXTERNAL APP) */}
+        {/* PATH 3: ASTROWATCH (LOCAL MODULAR VIEWPORT ROUTE FIXED) */}
         <button
-          onClick={() => window.open('https://drpsdeb.github.io/AstroWatch-drpsdeb/', '_blank')}
-          className="group bg-white p-8 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-sky-100 flex flex-col text-left"
+          onClick={() => onSelectPath('watch', false)}
+          className="group bg-white p-8 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-sky-100 flex flex-col text-left cursor-pointer"
         >
           <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🔭</div>
           <h3 className="text-2xl font-bold text-slate-800 mb-2">AstroWatch</h3>
@@ -964,8 +721,10 @@ const UniversalGateway = ({ onSelectPath }) => {
             Launch App <span>→</span>
           </div>
         </button>
-      
-        {/* PATH 4: ASTROMATCH (DVADASHA KOOT MILAN) */}
+
+        {/* PATH 4: Profile hub button moved to bottom */}
+
+        {/* PATH 5: ASTROMATCH (DVADASHA KOOT MILAN) */}
         <button
           onClick={() => onSelectPath('match', false)}
           className="group bg-white p-8 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all border-2 border-amber-100 hover:border-amber-400 text-left flex flex-col min-h-[320px]"
@@ -988,6 +747,22 @@ const UniversalGateway = ({ onSelectPath }) => {
           ))}
         </div>
       </div>
+      {/* Profile hub button placed at bottom */}
+      <div className="mt-8 flex justify-center px-4">
+        <button
+          onClick={() => onSelectPath('profiles', false)}
+          className="group bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all border border-slate-100 hover:border-emerald-500 text-left max-w-3xl w-full"
+        >
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">📁</div>
+            <div className="text-left">
+              <h3 className="text-xl font-bold text-slate-800 mb-1">Profile</h3>
+              <p className="text-slate-500 text-sm">Open the full Profile form (Place of Birth, lat/lon, timezone).</p>
+            </div>
+            <div className="ml-auto text-emerald-600 font-bold">Open Profile Form →</div>
+          </div>
+        </button>
+      </div>
     </div>
   );
 };
@@ -996,9 +771,6 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeModule, setActiveModule] = useState(null); // Controls Landing Page vs App
   const [isGuestMode, setIsGuestMode] = useState(false);  // Bypasses Firebase
-  const [selectedBoy, setSelectedBoy] = useState("");
-  const [selectedGirl, setSelectedGirl] = useState("");
-  const [matchResult, setMatchResult] = useState(null);
   const handleSaveToDatabase = async (data) => {
     // --- 🛡️ GUEST MODE CHECK ---
     if (isGuestMode) {
@@ -1023,6 +795,15 @@ const onSelectPath = (path, guest) => {
             setViewMode('natal');
         }
     };
+  
+  // Load a profile from the hub/profile library into the main app
+  const handleLoadProfile = (profile) => {
+    if (!profile) return;
+    setUserData({ formData: profile, geminiKey: safeStorage.get('geminiApiKey') || '' });
+    setActiveModule(null);
+  };
+
+  const goToHub = () => setActiveModule(null);
   const [popupInfo, setPopupInfo] = useState(null); 
   const [qaInput, setQaInput] = useState('');
   const [qaLoading, setQaLoading] = useState(false);
@@ -1039,123 +820,69 @@ const onSelectPath = (path, guest) => {
   const [savedProfiles, setSavedProfiles] = useState(() => {
     const local = safeStorage.get('astroClients');
     if (Array.isArray(local)) {
-      const valid = local.filter(p => p && typeof p === 'object' && p.name && p.dob);
+      const valid = local
+        .filter(p => p && typeof p === 'object' && p.name && p.dob)
+        .map(normalizeProfile);
       if (valid.length > 0) return valid;
     }
-    return [{ name: "Master Key", dob: "1954-10-29", tob: "10:50", lat: 22.5, lon: 88.3, tz: 5.5 }];
+    return [{ name: "Master Key", dob: "1954-10-29", time: "10:50", lat: 22.5, lon: 88.3, tzone: 5.5, id: generateProfileId({ name: "Master Key", dob: "1954-10-29" }) }];
   });
 
-  const getMatchMoonData = useCallback((profile) => {
-    if (!profile?.dob) return null;
+  const sortedProfiles = useMemo(() => {
+    if (!savedProfiles) return [];
+    return [...savedProfiles]
+      .filter(p => p && p.name)
+      .sort((a, b) => {
+        const nameA = String(a.name).trim().toLowerCase();
+        const nameB = String(b.name).trim().toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+  }, [savedProfiles]);
 
-    const timeStr = profile.time || profile.tob || '12:00';
-    const tz = Number(profile.tzone ?? profile.tz ?? 5.5);
-    const lat = Number(profile.lat ?? 17.3850);
-    const lon = Number(profile.lon ?? 78.4867);
-    const [y, m, d] = String(profile.dob).split('-').map(Number);
-    const [hr, min] = String(timeStr).split(':').map(Number);
+  const [cloudStatus, setCloudStatus] = useState('');
+  const [cloudLoading, setCloudLoading] = useState(false);
 
-    if (![y, m, d, hr, min, tz, lat, lon].every(Number.isFinite)) return null;
+  const loadCloudProfiles = useCallback(async () => {
+    if (!db) {
+      setCloudStatus('Firebase unavailable.');
+      return;
+    }
 
-    const birthDate = new Date(Date.UTC(y, m - 1, d, hr, min) - (tz * 3600000));
-    const positions = OfflineEphemeris.getPositions(birthDate, lat, lon);
-    const moon = positions.planets.find(p => p.planet === 'Moon');
-    if (!moon) return null;
+    setCloudLoading(true);
+    setCloudStatus('Connecting to Firebase...');
 
-    const nakSize = 40 / 3;
-    const nakExact = moon.fullDegree / nakSize;
-    const nakIndex = Math.floor(nakExact) % 27;
+    try {
+      if (!auth.currentUser) {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      }
 
-    return {
-      degree: moon.fullDegree,
-      rasiIndex: moon.rasiIndex,
-      rasi: safeStr(AstroEngine.SIDEREAL_RASIS[moon.rasiIndex], ' ') || AstroEngine.SIDEREAL_RASIS[moon.rasiIndex],
-      nakIndex,
-      nakshatra: AstroEngine.NAKSHATRAS[nakIndex],
-      pada: Math.floor((nakExact - Math.floor(nakExact)) * 4) + 1
-    };
+      const user = auth.currentUser;
+      if (!user) {
+        setCloudStatus('Firebase sign-in failed.');
+        setCloudLoading(false);
+        return;
+      }
+
+      const profilesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'profiles');
+      const snapshot = await getDocs(profilesRef);
+      const cloudProfiles = snapshot.docs.map(doc => normalizeProfile({ id: doc.id, ...doc.data() }));
+      if (cloudProfiles.length > 0) {
+        setSavedProfiles(cloudProfiles);
+        safeStorage.set('astroClients', cloudProfiles);
+        setCloudStatus(`Loaded ${cloudProfiles.length} cloud profiles.`);
+      } else {
+        setCloudStatus('No cloud profiles found.');
+      }
+    } catch (error) {
+      console.error('Firebase load error:', error);
+      setCloudStatus(error?.message || 'Failed to load cloud profiles.');
+    } finally {
+      setCloudLoading(false);
+    }
   }, []);
 
-  const handleCalculateMatch = useCallback(() => {
-    const boy = savedProfiles.find(p => p?.name === selectedBoy);
-    const girl = savedProfiles.find(p => p?.name === selectedGirl);
 
-    if (!boy || !girl) {
-      alert("Please select both profiles for AstroMatch.");
-      return;
-    }
-
-    const boyMoon = getMatchMoonData(boy);
-    const girlMoon = getMatchMoonData(girl);
-
-    if (!boyMoon || !girlMoon) {
-      alert("Unable to calculate one of the Moon positions. Please check date, time, latitude, longitude, and timezone in both profiles.");
-      return;
-    }
-
-    const nakDistance = (from, to) => ((to - from + 27) % 27) + 1;
-    const rasiDistance = (from, to) => ((to - from + 12) % 12) + 1;
-    const boyFromGirlNak = nakDistance(girlMoon.nakIndex, boyMoon.nakIndex);
-    const boyFromGirlRasi = rasiDistance(girlMoon.rasiIndex, boyMoon.rasiIndex);
-    const girlFromBoyRasi = rasiDistance(boyMoon.rasiIndex, girlMoon.rasiIndex);
-
-    const gana = ['Deva','Manushya','Rakshasa','Manushya','Manushya','Manushya','Deva','Deva','Rakshasa','Rakshasa','Manushya','Manushya','Deva','Rakshasa','Deva','Rakshasa','Deva','Rakshasa','Rakshasa','Manushya','Manushya','Deva','Rakshasa','Rakshasa','Manushya','Manushya','Deva'];
-    const rajju = ['Pada','Kati','Nabhi','Kantha','Shira','Kantha','Nabhi','Kati','Pada','Pada','Kati','Nabhi','Kantha','Shira','Kantha','Nabhi','Kati','Pada','Pada','Kati','Nabhi','Kantha','Shira','Kantha','Nabhi','Kati','Pada'];
-    const nadi = (idx) => idx % 3;
-    const varnaRank = [3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 4];
-    const vedhaPairs = [[0,18],[1,17],[2,16],[3,15],[4,23],[5,22],[6,21],[7,20],[8,19],[9,26],[10,25],[11,24]];
-    const vedhaBad = vedhaPairs.some(([a, b]) => (
-      (boyMoon.nakIndex === a && girlMoon.nakIndex === b) ||
-      (boyMoon.nakIndex === b && girlMoon.nakIndex === a)
-    ));
-
-    const lords = AstroEngine.RASHI_LORDS;
-    const friendships = {
-      Sun: ['Moon', 'Mars', 'Jupiter'],
-      Moon: ['Sun', 'Mercury'],
-      Mars: ['Sun', 'Moon', 'Jupiter'],
-      Mercury: ['Sun', 'Venus'],
-      Jupiter: ['Sun', 'Moon', 'Mars'],
-      Venus: ['Mercury', 'Saturn'],
-      Saturn: ['Mercury', 'Venus']
-    };
-    const boyLord = lords[boyMoon.rasiIndex];
-    const girlLord = lords[girlMoon.rasiIndex];
-    const areFriends = boyLord === girlLord || friendships[boyLord]?.includes(girlLord) || friendships[girlLord]?.includes(boyLord);
-
-    const badBhakoot = (
-      (boyFromGirlRasi === 2 && girlFromBoyRasi === 12) ||
-      (boyFromGirlRasi === 12 && girlFromBoyRasi === 2) ||
-      (boyFromGirlRasi === 6 && girlFromBoyRasi === 8) ||
-      (boyFromGirlRasi === 8 && girlFromBoyRasi === 6) ||
-      (boyFromGirlRasi === 5 && girlFromBoyRasi === 9) ||
-      (boyFromGirlRasi === 9 && girlFromBoyRasi === 5)
-    );
-
-    const scores = {
-      dina: [2, 4, 6, 8, 9].includes(boyFromGirlNak % 9 || 9) ? 3 : 0,
-      gana: gana[boyMoon.nakIndex] === gana[girlMoon.nakIndex] ? 6 : (gana[boyMoon.nakIndex] === 'Rakshasa' || gana[girlMoon.nakIndex] === 'Rakshasa' ? 1 : 5),
-      yoni: boyMoon.nakIndex === girlMoon.nakIndex ? 4 : (Math.abs(boyMoon.nakIndex - girlMoon.nakIndex) % 3 === 0 ? 3 : 2),
-      bhakoot: badBhakoot ? 0 : 7,
-      maitri: areFriends ? 2 : 1,
-      rajju: rajju[boyMoon.nakIndex] === rajju[girlMoon.nakIndex] ? 0 : 7,
-      vedha: vedhaBad ? 0 : 3,
-      vashya: boyMoon.rasiIndex === girlMoon.rasiIndex || Math.abs(boyMoon.rasiIndex - girlMoon.rasiIndex) === 1 ? 2 : 1,
-      mahendra: [4, 7, 10, 13, 16, 19, 22, 25].includes(boyFromGirlNak) ? 4 : 0,
-      striDirgha: boyFromGirlNak >= 14 ? 3 : 0,
-      nadi: nadi(boyMoon.nakIndex) === nadi(girlMoon.nakIndex) ? 0 : 8,
-      varna: varnaRank[boyMoon.rasiIndex] >= varnaRank[girlMoon.rasiIndex] ? 1 : 0
-    };
-
-    setMatchResult({
-      boy,
-      girl,
-      boyMoon,
-      girlMoon,
-      scores,
-      totalScore: Object.values(scores).reduce((sum, score) => sum + score, 0)
-    });
-  }, [getMatchMoonData, savedProfiles, selectedBoy, selectedGirl]);
 
   // 🔐 GOOGLE SIGN-IN FUNCTION
   const handleGoogleLogin = () => {
@@ -1164,32 +891,6 @@ const onSelectPath = (path, guest) => {
       .then((result) => console.log(`✅ Welcome, ${result.user.displayName}!`))
       .catch((error) => console.error("❌ Google Login Failed", error));
   };
-
-  // ☁️ CLOUD SYNC: Automatically pulls profiles from Firebase on startup
-  useEffect(() => {
-    if (db && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          console.log("☁️ Firebase: Syncing with Cloud...");
-          const profilesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'profiles');
-          
-          onSnapshot(profilesRef, (snapshot) => {
-            const cloudProfiles = snapshot.docs.map(doc => doc.data());
-            if (cloudProfiles.length > 0) {
-              console.log(`✅ Cloud synced ${cloudProfiles.length} profiles!`);
-              setSavedProfiles(cloudProfiles);
-              // Keeps browser hard drive updated too
-              window.localStorage.setItem('astroClients', JSON.stringify(cloudProfiles));
-            }
-          });
-        } else {
-          // Log in if not already connected
-          console.log("🔒 Waiting for Google Sign-In...");
-        }
-      });
-      return () => unsubscribe();
-    }
-  }, [db, auth]);
 
   // Always keep LocalStorage perfectly in sync with React State
   useEffect(() => {
@@ -1386,23 +1087,6 @@ const generatePrashnaChart = () => {
     return () => unsubscribe();
   }, []);
 
-  // Sync Profiles from Firebase (Strict Firebase rules followed)
-  useEffect(() => {
-    if (!user || !db) return;
-    const profilesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'profiles');
-    const unsubscribe = onSnapshot(profilesRef, (snapshot) => {
-      const loaded = [];
-      snapshot.forEach(d => loaded.push(d.data()));
-      if (loaded.length > 0) {
-        setSavedProfiles(loaded);
-        safeStorage.set('astroClients', loaded);
-      }
-    }, (error) => {
-       console.error("Firestore Listen Error:", error);
-    });
-    return () => unsubscribe();
-  }, [user]); 
-
   // Compute Natal Positions
   useEffect(() => {
      if (!userData || !userData.formData) return;
@@ -1487,68 +1171,85 @@ const generatePrashnaChart = () => {
   }, [isGuestMode]);
 
   const handleSaveProfile = async (formData) => {
-    if (!formData || !formData.name) return;
-    
-    console.log("🛠️ Step 1: Starting save for:", formData.name);
-    
+    if (!formData || !formData.name || !formData.dob) return;
+    const profile = normalizeProfile(formData);
+    console.log("🛠️ Saving profile:", profile.name, profile.dob);
+
     // 1. LOCAL SAVE
     let currentList = [];
     try {
-        const stored = window.localStorage.getItem('astroClients');
-        if (stored) currentList = JSON.parse(stored);
-    } catch(e) {}
-    
-    const idx = currentList.findIndex(p => p.name === formData.name);
-    if (idx >= 0) currentList[idx] = formData;
-    else currentList.push(formData);
-    
-    window.localStorage.setItem('astroClients', JSON.stringify(currentList));
-    setSavedProfiles([...currentList]);
-    console.log("🛠️ Step 2: Local storage updated.");
+      const stored = window.localStorage.getItem('astroClients');
+      currentList = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(currentList)) currentList = [];
+    } catch (e) {
+      currentList = [];
+    }
+
+    const idx = currentList.findIndex(p => p && generateProfileId(p) === profile.id);
+    if (idx >= 0) currentList[idx] = profile;
+    else currentList.push(profile);
+
+    const normalizedList = currentList.map(normalizeProfile);
+    window.localStorage.setItem('astroClients', JSON.stringify(normalizedList));
+    setSavedProfiles(normalizedList);
+    console.log("🛠️ Local storage updated.");
 
     // 2. CLOUD SAVE
     if (typeof db !== 'undefined') {
-        console.log("🛠️ Step 3: Firebase found! Attempting cloud save...");
-        try {
-            if (!auth.currentUser) {
-                console.log("🛠️ Step 4: Signing in anonymously...");
-                await signInAnonymously(auth);
-            }
-            const uid = auth.currentUser.uid;
-            const profileId = encodeURIComponent(`${formData.name}_${formData.dob}`);
-            const docRef = doc(db, 'artifacts', appId, 'users', uid, 'profiles', profileId);
-            
-            await setDoc(docRef, formData);
-            console.log("🔥 STEP 5: CLOUD SAVE SUCCESSFUL!");
-        } catch (error) {
-            console.error("❌ Firebase Error:", error);
+      console.log("🛠️ Firebase found! Attempting cloud save...");
+      try {
+        if (!auth.currentUser) {
+          console.log("🛠️ Signing in anonymously...");
+          await signInAnonymously(auth);
         }
+        const uid = auth.currentUser.uid;
+        const docRef = doc(db, 'artifacts', appId, 'users', uid, 'profiles', profile.id);
+        await setDoc(docRef, profile);
+        console.log("🔥 Cloud save successful!");
+      } catch (error) {
+        console.error("❌ Firebase Error:", error);
+      }
     } else {
-        console.error("❌ Error: 'db' variable not found!");
+      console.error("❌ Error: 'db' variable not found!");
     }
   };
     
     
   
   const handleDeleteProfile = async (formData) => {
-    if (!formData || !formData.name) return;
-    const updated = savedProfiles.filter(p => p && p.name && !(p.name === formData.name && p.dob === formData.dob));
+    if (!formData || !formData.name || !formData.dob) return;
+    const targetId = generateProfileId(formData);
+    const updated = savedProfiles.filter(p => p && p.id !== targetId);
     setSavedProfiles(updated.length > 0 ? updated : HARDCODED_PROFILES);
     safeStorage.set('astroClients', updated.length > 0 ? updated : HARDCODED_PROFILES);
-    
+
     if (user && db) {
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profiles', encodeURIComponent(`${formData.name}_${formData.dob}`)));
-        } catch (e) {
-            console.error("Error deleting profile from cloud:", e);
-        }
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profiles', targetId));
+      } catch (e) {
+        console.error("Error deleting profile from cloud:", e);
+      }
     }
   };
 
-  const handleTopBarProfileSwitch = (e) => {
-    const idx = parseInt(e.target.value);
-    if(idx >= 0 && savedProfiles[idx]) { setUserData({ ...userData, formData: savedProfiles[idx] }); safeStorage.set('astroFormData', savedProfiles[idx]); }
+  const handleTopBarProfileSwitch = (valOrEvent) => {
+    const targetId = valOrEvent && valOrEvent.target ? valOrEvent.target.value : valOrEvent;
+    const selected = savedProfiles.find(p => p.id === targetId);
+    if (selected) {
+      setUserData({ ...userData, formData: selected });
+      safeStorage.set('astroFormData', selected);
+    }
   };
+
+  const profileManagerComponent = (
+    <ProfileManager
+      appId={appId}
+      auth={auth}
+      db={db}
+      onUserChanged={setUser}
+      onProfilesSynced={setSavedProfiles}
+    />
+  );
 
   const getShadbalaCtxStr = (planetNamesArray) => {
       if (!shadbalaScores) return '';
@@ -1800,9 +1501,14 @@ RULES FOR THIS READING:
   const detectedYogas = useMemo(() => (!isNaN(lagnaIndex) && natalPlanets.length > 0) ? AstroEngine.calculateYogas(natalPlanets, lagnaIndex) : [], [natalPlanets, lagnaIndex]);
   const ashtakavargaData = useMemo(() => (!isNaN(lagnaIndex) && natalPlanets.length > 0) ? AstroEngine.calculateAshtakavarga(natalPlanets, lagnaIndex) : null, [natalPlanets, lagnaIndex]);
 
-  // Early Return for Auth
-  if (!userData || !userData.formData) {
-    return <div className="min-h-screen bg-slate-200 font-sans p-4 flex items-center justify-center"><BirthForm onDeleteProfile={handleDeleteProfile} onGoogleLogin={handleGoogleLogin} onSaveProfile={handleSaveProfile} onStartApp={setUserData} savedProfiles={savedProfiles} isLoggedIn={!!auth?.currentUser} /></div>;
+  // Only render the standalone BirthForm when user lacks data AND user explicitly opened Profiles
+  if ((!userData || !userData.formData) && activeModule === 'profiles') {
+    return (
+      <div className="min-h-screen bg-slate-200 font-sans p-4 flex items-center justify-center">
+        {profileManagerComponent}
+        <BirthForm onDeleteProfile={handleDeleteProfile} onGoogleLogin={handleGoogleLogin} onSaveProfile={handleSaveProfile} onStartApp={() => setActiveModule(null)} savedProfiles={sortedProfiles} isLoggedIn={!!auth?.currentUser} />
+      </div>
+    );
   }
   
   // Safe variable assignment after auth
@@ -1811,8 +1517,50 @@ RULES FOR THIS READING:
   const panchang = (sunTransit && moonTransit && isExpert) ? AstroEngine.getPanchang(sunTransit.fullDegree, moonTransit.fullDegree, time) : null;
   const functionalNature = !isNaN(lagnaIndex) ? AstroEngine.FUNCTIONAL_ROLES[lagnaIndex] : null;
 
+  if (activeModule === 'watch') {
+    return (
+      <AstroWatchView
+        savedProfiles={sortedProfiles}
+        currentProfileName={userData?.formData?.name}
+        onBack={() => setActiveModule(null)}
+        onSelectProfile={(profileData) => {
+          setUserData({ ...userData, formData: profileData });
+          safeStorage.set('astroFormData', profileData);
+        }}
+      />
+    );
+  }
+
+  if (activeModule === 'profiles') {
+    // Map the legacy 'profiles' route to the original Initialize AstroWatch form
+    return (
+      <div className="min-h-screen bg-slate-200 font-sans p-4 flex items-center justify-center">
+        {profileManagerComponent}
+        <BirthForm onDeleteProfile={handleDeleteProfile} onGoogleLogin={handleGoogleLogin} onSaveProfile={handleSaveProfile} onStartApp={() => setActiveModule(null)} savedProfiles={sortedProfiles} isLoggedIn={!!auth?.currentUser} />
+      </div>
+    );
+  }
+
+  // If user opened the Match module, render the focused AstroMatch view only
+  if (activeModule === 'match') {
+    return (
+      <div className="min-h-screen bg-slate-200 font-sans p-4 flex items-center justify-center">
+        {profileManagerComponent}
+        <AstroMatchView
+          savedProfiles={sortedProfiles}
+          onBack={() => setActiveModule(null)}
+          onLoadCloudProfiles={loadCloudProfiles}
+          cloudStatus={cloudStatus}
+          cloudLoading={cloudLoading}
+          isCloudSignedIn={!!auth.currentUser}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#ececd6] text-slate-800 font-sans flex flex-col">
+      {profileManagerComponent}
       {!activeModule ? (
         /* PATH A: SHOW LANDING PAGE */
         <UniversalGateway onSelectPath={onSelectPath} />
@@ -1837,168 +1585,7 @@ RULES FOR THIS READING:
 
           {/* WRAP YOUR OLD CONTENT HERE */}
           <div className="flex-1">
-            {/* 🏹 ASTROMATCH VIEW MODULE ROUTE */}
-          {activeModule === 'match' && (
-            <div className="max-w-4xl mx-auto p-6 bg-[#fdfde8] text-slate-800 rounded-3xl shadow-xl border border-amber-200/60 mt-4 mb-12">
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-extrabold text-amber-900 tracking-tight">DVADASHA KOOT MILAN</h1>
-                <p className="text-sm text-amber-700/80 italic mt-1">Advanced 50-Point Compatibility Analysis Engine</p>
-              </div>
 
-              {/* Profile Dropdown Selection Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Boy Selection Card */}
-                <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
-                  <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">👦 Boy's Profile Selection</label>
-                  <select
-                    value={selectedBoy || ""}
-                    onChange={(e) => setSelectedBoy(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="">-- Choose Boy Profile --</option>
-                    {savedProfiles.map(p => <option key={p.id || p.name} value={p.name}>{p.name}</option>)}
-                  </select>
-                </div>
-
-                {/* Girl Selection Card */}
-                <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
-                  <label className="block text-xs font-bold text-pink-800 uppercase tracking-wider mb-2">👧 Girl's Profile Selection</label>
-                  <select
-                    value={selectedGirl || ""}
-                    onChange={(e) => setSelectedGirl(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:border-pink-500"
-                  >
-                    <option value="">-- Choose Girl Profile --</option>
-                    {savedProfiles.map(p => <option key={p.id || p.name} value={p.name}>{p.name}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Engine Trigger */}
-              <div className="text-center mb-8">
-                <button
-                  onClick={handleCalculateMatch}
-                  disabled={!selectedBoy || !selectedGirl}
-                  className="w-full max-w-sm px-8 py-4 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-2xl shadow-lg transition-all transform active:scale-[0.98] tracking-wide uppercase text-sm"
-                >
-                  Calculate Compatibility Score
-                </button>
-              </div>
-
-              {/* 📊 DYNAMIC 12-KOOT SCOREBOARD DISPLAYER */}
-              {matchResult && matchResult.scores && (
-                <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  
-                  {/* Sync Details Subheader Overview */}
-                  <div className="grid grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-amber-100 mb-6 shadow-sm text-sm">
-                    <div className="border-r border-slate-100 pr-2">
-                      <p className="font-bold text-blue-800">👦 {matchResult.boy.name}</p>
-                      <p className="text-xs text-slate-600 mt-0.5">✨ Rasi: <span className="font-semibold">{matchResult.boyMoon.rasi}</span></p>
-                      <p className="text-xs text-slate-600">⭐ Nakshatra: <span className="font-bold text-blue-700">{matchResult.boyMoon.nakshatra}</span> (P-{matchResult.boyMoon.pada})</p>
-                    </div>
-                    <div className="pl-2">
-                      <p className="font-bold text-pink-800">👧 {matchResult.girl.name}</p>
-                      <p className="text-xs text-slate-600 mt-0.5">✨ Rasi: <span className="font-semibold">{matchResult.girlMoon.rasi}</span></p>
-                      <p className="text-xs text-slate-600">⭐ Nakshatra: <span className="font-bold text-pink-700">{matchResult.girlMoon.nakshatra}</span> (P-{matchResult.girlMoon.pada})</p>
-                    </div>
-                  </div>
-
-                  {/* Comprehensive Total Performance Badge */}
-                  <div className="text-center mb-6 bg-white p-4 rounded-2xl border border-amber-200 inline-block mx-auto w-full max-w-xs shadow-sm block">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Harmony Points</p>
-                    <p className={`text-4xl font-extrabold mt-1 ${matchResult.totalScore >= 25 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {matchResult.totalScore} <span className="text-lg font-normal text-slate-300">/ 50</span>
-                    </p>
-                    <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                      {matchResult.totalScore >= 25 ? "✅ Safe Marital Accord" : "⚠️ Structural Evaluation Warning"}
-                    </p>
-                  </div>
-
-                  {/* 12-Row Metrics Calculation Grid */}
-                  <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-800 text-white text-xs uppercase font-semibold tracking-wider">
-                          <th className="p-3 pl-4">Koot Parameters</th>
-                          <th className="p-3">Max</th>
-                          <th className="p-3 text-right pr-4">Obtained</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-slate-700 divide-y divide-slate-100 text-xs">
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">1. Dina / Tara <span className="text-[10px] text-slate-400 font-normal ml-1">(Longevity Metric)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">3</td>
-                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.dina === 0 ? 'text-rose-600' : 'text-slate-900'}`}>{matchResult.scores.dina}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">2. Gana <span className="text-[10px] text-slate-400 font-normal ml-1">(Temperament Match)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">6</td>
-                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.gana === 0 ? 'text-rose-600' : 'text-slate-900'}`}>{matchResult.scores.gana}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">3. Yoni <span className="text-[10px] text-slate-400 font-normal ml-1">(Innate Subconscious Nature)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">4</td>
-                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.yoni}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">4. Rasi / Bhakoot <span className="text-[10px] text-slate-400 font-normal ml-1">(Emotional Growth Matrix)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">7</td>
-                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.bhakoot === 0 ? 'text-rose-600' : 'text-slate-900'}`}>{matchResult.scores.bhakoot}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">5. Graha Maitri <span className="text-[10px] text-slate-400 font-normal ml-1">(Psychological Synergy)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">2</td>
-                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.maitri}</td>
-                        </tr>
-                        <tr className={matchResult.scores.rajju === 0 ? "bg-rose-50/40" : ""}>
-                          <td className="p-3 pl-4 font-medium">6. Rajju <span className="text-[10px] text-rose-600 font-bold ml-1">(Absolute Vital Life-Tie Filter)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">7</td>
-                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.rajju === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {matchResult.scores.rajju} {matchResult.scores.rajju === 0 && '❌ Dosha'}
-                          </td>
-                        </tr>
-                        <tr className={matchResult.scores.vedha === 0 ? "bg-rose-50/40" : ""}>
-                          <td className="p-3 pl-4 font-medium">7. Vedha <span className="text-[10px] text-rose-600 font-bold ml-1">(Inimical Piercing Afflictions)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">3</td>
-                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.vedha === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {matchResult.scores.vedha} {matchResult.scores.vedha === 0 && '❌ Dosha'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">8. Vashya <span className="text-[10px] text-slate-400 font-normal ml-1">(Mutual Magnetic Attraction)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">2</td>
-                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.vashya}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">9. Mahendra <span className="text-[10px] text-slate-400 font-normal ml-1">(Lineage & Long-term Wealth)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">4</td>
-                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.mahendra}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">10. Stri-Dirgha <span className="text-[10px] text-slate-400 font-normal ml-1">(Auspicious Family Well-being)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">3</td>
-                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.striDirgha}</td>
-                        </tr>
-                        <tr className={matchResult.scores.nadi === 0 ? "bg-rose-50/40" : ""}>
-                          <td className="p-3 pl-4 font-medium">11. Nadi <span className="text-[10px] text-rose-600 font-bold ml-1">(Genetic / Physiological Constitution)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">8</td>
-                          <td className={`p-3 text-right pr-4 font-bold ${matchResult.scores.nadi === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {matchResult.scores.nadi} {matchResult.scores.nadi === 0 && '❌ Dosha'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 pl-4 font-medium">12. Varna <span className="text-[10px] text-slate-400 font-normal ml-1">(Ego & Social Alignment)</span></td>
-                          <td className="p-3 font-semibold text-slate-400">1</td>
-                          <td className="p-3 text-right pr-4 font-bold text-slate-900">{matchResult.scores.varna}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                </div>
-              )}
-            </div>
-          )}
              {/* 
                    <div className={`min-h-screen bg-[#ececd6] text-slate-800 font-sans flex flex-col items-center overflow-x-hidden pt-12 md:pt-10`}>
                       
@@ -2061,7 +1648,7 @@ RULES FOR THIS READING:
       {/* CENTER: The App Title */}
       <div className="flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2 pointer-events-none">
         <LogoSVG className="w-4 h-4" /> 
-        <span>VedicAstro 1.5.0 (AI Live)</span>
+        <span>VedicAstroAll 1.0.0 (AI Live)</span>
       </div>
 
       {/* RIGHT: Status Indicator */}
@@ -2079,10 +1666,13 @@ RULES FOR THIS READING:
                         <div className="w-full bg-[#fdfde8] p-2 text-xs border border-slate-300 flex justify-between items-center shadow-sm z-10 font-serif font-bold text-green-900 rounded-lg mb-6 shrink-0">
                           <div className="flex items-center gap-2">
                             <Cloud size={16} className="text-blue-500" />
-                            <select className="bg-transparent border border-green-700/30 rounded px-2 py-1 outline-none text-green-900 font-bold max-w-[120px] md:max-w-none" value={(() => { const idx = savedProfiles.findIndex(c => c && c.name === userData.formData.name && c.dob === userData.formData.dob); return idx >= 0 ? String(idx) : ''; })()} onChange={handleTopBarProfileSwitch}>
-                              <option value="" disabled>Select Profile</option>
-                              {savedProfiles.map((client, idx) => (client && client.name) ? <option key={idx} value={String(idx)}>{String(client.name)}</option> : null)}
-                            </select>
+                            <SearchableDropdown
+                              options={sortedProfiles}
+                              value={userData?.formData?.id || generateProfileId(userData?.formData)}
+                              onChange={handleTopBarProfileSwitch}
+                              placeholder="Select Profile"
+                              buttonClassName="max-w-[120px] md:max-w-none"
+                            />
                             <button onClick={() => setUserData(null)} className="p-1.5 hover:bg-green-100 rounded text-green-800 border border-transparent hover:border-green-300 shadow-sm"><Settings size={14} /></button>
                           </div>
                           <span className="hidden md:inline text-right opacity-80 truncate pl-4">{String(userData.formData.dob)} {String(userData.formData.time)} | Birth: {String(userData.formData.city)}</span>
