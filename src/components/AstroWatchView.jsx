@@ -3,12 +3,15 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BarChart2, ShieldAlert, Sparkles, Clock, Compass, Home, X, Loader2 } from 'lucide-react';
+import { BarChart2, ShieldAlert, Sparkles, Clock, Compass, Home, X, Loader2, Cpu, ArrowLeft } from 'lucide-react';
 import { 
   getD9RasiIndex, getD10RasiIndex, getD6RasiIndex, getD20RasiIndex, calculateShadbala, GRAHAS,
-  OfflineEphemeris, AstroEngine, getPositionsForProfile
+  OfflineEphemeris, AstroEngine, getPositionsForProfile, getTransitPositions
 } from '../utils/ephemerisEngine';
+import { LongevityEngine } from '../utils/LongevityEngine';
 import SearchableDropdown from './SearchableDropdown';
+import MuhurthaDialView from './MuhurthaDialView';
+import PreciseCalculationToggle from './PreciseCalculationToggle';
 
 const ASTRO_FAQS = [
   {
@@ -338,12 +341,35 @@ const NorthIndianChart = ({ planets, lagnaIndex, chartTitle, onSymbolClick }) =>
              <button
                key={house.h}
                type="button"
-               onClick={() => onSymbolClick?.({ title: `House ${house.h}`, subtitle: rashiName, text: `${HOUSE_LORE[house.h - 1]} This house carries the sign ${rashiName}.`, promptData: { type: 'house', house: house.h, rashi: rashiName, rasiIndex } })}
+               onClick={() => {
+                   const titleLabel = chartTitle || 'Natal';
+                   const housePlanets = Array.isArray(planets) 
+                     ? planets.filter(p => p && p.rasiIndex === rasiIndex).map(p => p.planet)
+                     : [];
+                   const planetsStr = housePlanets.length > 0 ? `Planets in this house: ${housePlanets.join(', ')}.` : 'No planets reside in this house.';
+                   onSymbolClick?.({ 
+                       title: `House ${house.h} (${rashiName})`, 
+                       subtitle: `${titleLabel} • ${planetsStr}`, 
+                       text: `Vedic Significance of House ${house.h}: ${HOUSE_LORE[house.h - 1] || 'Astrological House Significance'}`, 
+                       promptData: { 
+                           type: 'house', 
+                           house: house.h, 
+                           rashi: rashiName, 
+                           rasiIndex: rasiIndex, 
+                           chartPlanets: planets, 
+                           chartLabel: titleLabel, 
+                           lagnaIndex: lagnaIndex 
+                       } 
+                   });
+               }}
                className="absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 w-[22%] h-[22%] cursor-pointer"
                style={{ left: `${house.x}%`, top: `${house.y}%` }}
              >
                 <div className={`absolute top-0 text-[9px] font-bold ${house.h === 1 ? 'text-red-600' : 'text-amber-800/40'}`}>{rasiIndex + 1}</div>
                 {house.h === 1 && <div className="absolute -top-3.5 text-[8px] text-red-600 font-bold uppercase pointer-events-none">Asc</div>}
+                
+                <div className="absolute bottom-0 text-[7px] text-amber-800/30 font-bold uppercase select-none pointer-events-none">H{house.h}</div>
+                
                 <div className="flex flex-wrap content-center justify-center gap-1 pt-2 z-10">
                     {planets.filter(p => p.rasiIndex === rasiIndex).map(p => (
                         <button
@@ -386,9 +412,12 @@ const planetInfo = (p, kind, lagnaIndex) => {
   };
 };
 
-const CosmicOrrery = ({ transits, lagnaIndex, onSymbolClick }) => {
+const CosmicOrrery = ({ transits, natalPlanets, lagnaIndex, sunTimes, onSymbolClick }) => {
   const lengths = { Sun: '35%', Moon: '44%', Mars: '32%', Mercury: '41%', Jupiter: '29%', Venus: '38%', Saturn: '23%', Rahu: '26%', Ketu: '26%' };
   const colors = { Sun: 'bg-red-400', Moon: 'bg-slate-300', Mars: 'bg-red-700', Mercury: 'bg-green-500', Jupiter: 'bg-orange-400', Venus: 'bg-fuchsia-400', Saturn: 'bg-blue-500', Rahu: 'bg-gray-500', Ketu: 'bg-amber-700' };
+
+  const sunsetDeg = sunTimes ? ((sunTimes.sunset.frac + 12) % 24) * 15 : 270;
+  const sunriseDeg = sunTimes ? ((sunTimes.sunrise.frac + 12) % 24) * 15 : 90;
 
   return (
     <div className="relative w-[340px] h-[340px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[550px] lg:h-[550px] rounded-full bg-[#fdfde8] shadow-xl flex items-center justify-center shrink-0 select-none animate-in fade-in duration-300">
@@ -397,16 +426,51 @@ const CosmicOrrery = ({ transits, lagnaIndex, onSymbolClick }) => {
       <div className="absolute inset-[12%] rounded-full border border-[#d8d8b6] bg-[#fdfde8]"></div>
       <BaseRings lagnaIndex={lagnaIndex} onSymbolClick={onSymbolClick} />
       
-      {/* 🚀 FIXED HIGH-PRECISION ORRERY INDICATOR HANDS */}
+      {/* ☀️ Day/Night Circle */}
+      <div 
+        className="absolute inset-[36%] rounded-full border border-[#d8d8b6] shadow-inner overflow-hidden z-10" 
+        style={{ background: `conic-gradient(from 0deg, #bae6fd 0deg, #bae6fd ${sunsetDeg}deg, #1e293b ${sunsetDeg}deg, #1e293b ${sunriseDeg}deg, #bae6fd ${sunriseDeg}deg)` }}
+      >
+         <div className="absolute inset-[25%] rounded-full bg-[#fdfde8]/45 border border-slate-300/50 backdrop-blur-[0.5px]"></div>
+      </div>
+
+      {/* 🌌 Cosmic Orrery Orbit Tracks */}
+      {/* Natal Planet Orbit Track (Single circular border to guide natal planets) */}
+      <div className="absolute inset-[32.5%] rounded-full border border-dashed border-amber-600/30 pointer-events-none z-10"></div>
+      
+      {/* Transit Orbit Tracks */}
+      <div className="absolute inset-[27%] rounded-full border border-dotted border-slate-300/30 pointer-events-none z-10"></div> {/* Saturn Orbit */}
+      <div className="absolute inset-[24%] rounded-full border border-dotted border-slate-300/30 pointer-events-none z-10"></div> {/* Rahu/Ketu Orbit */}
+      <div className="absolute inset-[21%] rounded-full border border-dotted border-slate-300/30 pointer-events-none z-10"></div> {/* Jupiter Orbit */}
+      <div className="absolute inset-[18%] rounded-full border border-dotted border-slate-300/30 pointer-events-none z-10"></div> {/* Mars Orbit */}
+      <div className="absolute inset-[15%] rounded-full border border-dotted border-slate-300/30 pointer-events-none z-10"></div> {/* Sun Orbit */}
+      <div className="absolute inset-[9%] rounded-full border border-dotted border-slate-300/30 pointer-events-none z-10"></div>  {/* Mercury Orbit */}
+
+      {/* 🚀 NATAL PLANETS HANDS (INNER CIRCLE) */}
+      {natalPlanets?.map(p => {
+           const rot = p.fullDegree;
+           return (
+             <div key={`orrery-natal-${p.planet}`} className="absolute w-[2px] z-20 origin-bottom flex flex-col items-center justify-start pointer-events-none has-[button:hover]:z-[250]" style={{ height: '17.5%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${rot}deg)` }}>
+                <button type="button" onClick={() => onSymbolClick?.(planetInfo(p, 'Natal', lagnaIndex))} className={`relative pointer-events-auto cursor-pointer group flex items-center justify-center w-4.5 h-4.5 bg-white rounded-full border border-slate-300 shadow-md z-40 hover:scale-125 transition-transform ${AstroEngine.PLANET_TEXT_COLORS[p.planet]}`} style={{ transform: `rotate(-${rot}deg)` }}>
+                   <span className="font-bold text-[9px] pb-[1px]">{AstroEngine.PLANET_SYMBOLS[p.planet]}</span>
+                   <InfoTooltip title={`${p.planet} (Natal)`} subtitle={`${(p.fullDegree || 0).toFixed(1)} deg`} />
+                </button>
+                <div className={`w-[1px] h-full ${colors[p.planet]} opacity-60`}></div>
+             </div>
+           );
+      })}
+
+      {/* 🚀 FIXED HIGH-PRECISION ORRERY INDICATOR HANDS (OUTER ORBITS) */}
       {transits?.map(p => {
            const rot = p.fullDegree;
            return (
-             <div key={`orrery-${p.planet}`} className="absolute w-[2px] z-30 origin-bottom flex flex-col items-center justify-start pointer-events-none" style={{ height: lengths[p.planet] || '30%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${rot}deg)` }}>
-                <button type="button" onClick={() => onSymbolClick?.(planetInfo(p, 'Transit', lagnaIndex))} className={`relative pointer-events-auto cursor-pointer group flex items-center justify-center w-5 h-5 bg-white rounded-full border border-slate-300 shadow-md z-40 hover:scale-125 transition-transform ${AstroEngine.PLANET_TEXT_COLORS[p.planet]}`} style={{ transform: `rotate(-${rot}deg)` }}>
+             <div key={`orrery-${p.planet}`} className="absolute w-[2px] z-30 origin-bottom flex flex-col items-center justify-start pointer-events-none has-[button:hover]:z-[250]" style={{ height: lengths[p.planet] || '30%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${rot}deg)` }}>
+                <button type="button" onClick={() => onSymbolClick?.(planetInfo(p, 'Transit', lagnaIndex))} className={`relative pointer-events-auto cursor-pointer group flex items-center justify-center w-5 h-5 bg-white rounded-full border border-slate-300 shadow-md z-45 hover:scale-125 transition-transform ${AstroEngine.PLANET_TEXT_COLORS[p.planet]}`} style={{ transform: `rotate(-${rot}deg)` }}>
                    <span className="font-bold text-[10px] pb-[1px]">{AstroEngine.PLANET_SYMBOLS[p.planet]}</span>
-                   <InfoTooltip title={p.planet} subtitle={`${(p.fullDegree || 0).toFixed(1)} deg`} />
+                   <span className="text-[6px] align-super text-amber-600 font-sans font-black">t</span>
+                   <InfoTooltip title={`${p.planet} (Transit)`} subtitle={`${(p.fullDegree || 0).toFixed(1)} deg`} />
                 </button>
-                <div className={`w-[2px] h-full ${colors[p.planet]} opacity-70`}></div>
+                <div className={`w-[2.5px] h-full ${colors[p.planet]} opacity-85`}></div>
              </div>
            );
       })}
@@ -451,7 +515,7 @@ const WatchFace = ({ time, transits, natalPlanets, lagnaIndex, sunTimes, onSymbo
         const angleOffset = (idx - (group.length - 1) / 2) * 5.5;
         const angle = centerAngle + angleOffset;
         return (
-          <div key={`${p.planet}-${isTransit ? 'tr' : 'nt'}`} className="absolute inset-0 pointer-events-none z-20" style={{ transform: `rotate(${angle}deg)` }}>
+          <div key={`${p.planet}-${isTransit ? 'tr' : 'nt'}`} className="absolute inset-0 pointer-events-none z-20 has-[button:hover]:z-[250]" style={{ transform: `rotate(${angle}deg)` }}>
             <button
               type="button"
               className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-pointer group font-serif font-bold text-[10px] md:text-[14px] drop-shadow-sm hover:scale-150 transition-transform ${AstroEngine.PLANET_TEXT_COLORS[p.planet]}`}
@@ -478,12 +542,12 @@ const WatchFace = ({ time, transits, natalPlanets, lagnaIndex, sunTimes, onSymbo
       
       <div className="absolute inset-[34%] rounded-full border border-[#d8d8b6] shadow-inner overflow-hidden" style={{ background: `conic-gradient(from 0deg, #bae6fd 0deg, #bae6fd ${sunsetDeg}deg, #1e293b ${sunsetDeg}deg, #1e293b ${sunriseDeg}deg, #bae6fd ${sunriseDeg}deg)` }}><div className="absolute inset-[25%] rounded-full bg-[#fdfde8] border border-slate-300"></div></div>
       
-      <div className="absolute w-[2px] z-30 origin-bottom flex flex-col items-center justify-start pointer-events-none" style={{ height: '34%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${currentSunDeg}deg)` }}>
+      <div className="absolute w-[2px] z-30 origin-bottom flex flex-col items-center justify-start pointer-events-none has-[button:hover]:z-[250]" style={{ height: '34%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${currentSunDeg}deg)` }}>
          <button type="button" onClick={() => onSymbolClick?.({ title: '24-Hour Sunclock', subtitle: 'Diurnal Indicator', text: 'This hand completes one revolution every 24 hours. The light band shows daytime and the dark band shows nighttime.' })} style={{ transform: `rotate(-${currentSunDeg}deg)` }} className="pointer-events-auto cursor-pointer group bg-amber-400 rounded-full border border-amber-600 text-[10px] w-4 h-4 flex items-center justify-center mt-1 font-sans shadow hover:scale-125 transition-transform">☀️<InfoTooltip title="Sunclock" subtitle="24-hour hand" /></button>
          <div className="w-[1.5px] h-full bg-amber-400/80"></div>
       </div>
 
-      <div className="absolute w-[2px] z-20 origin-bottom flex flex-col items-center justify-start pointer-events-none" style={{ height: '28%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${moonDialDeg}deg)` }}>
+      <div className="absolute w-[2px] z-20 origin-bottom flex flex-col items-center justify-start pointer-events-none has-[button:hover]:z-[250]" style={{ height: '28%', bottom: '50%', left: 'calc(50% - 1px)', transform: `rotate(${moonDialDeg}deg)` }}>
          <button type="button" onClick={() => onSymbolClick?.({ title: 'Lunar Position & Tithi', subtitle: tithiInfo, text: `The Moon hand is derived from the angular separation between the transit Moon and transit Sun.\n\nCurrent tithi: ${tithiInfo}\nSun-Moon distance: ${lunarElongation.toFixed(2)} degrees.` })} style={{ transform: `rotate(-${moonDialDeg}deg)` }} className="pointer-events-auto cursor-pointer group bg-slate-100 rounded-full border border-slate-400 text-[10px] w-4 h-4 flex items-center justify-center mt-1 font-sans shadow hover:scale-125 transition-transform">🌙<InfoTooltip title="Moon hand" subtitle={tithiInfo} /></button>
          <div className="w-[1.5px] h-full bg-slate-300/80"></div>
       </div>
@@ -513,6 +577,24 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
 
   const [selectedProfile, setSelectedProfile] = useState(currentProfileName || sortedProfiles[0]?.name || '');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [preciseToggle, setPreciseToggle] = useState(() => localStorage.getItem('use_precise_api') === 'true');
+  const [calcTrigger, setCalcTrigger] = useState(0);
+  useEffect(() => {
+    const handleToggle = () => {
+      setPreciseToggle(localStorage.getItem('use_precise_api') === 'true');
+      setCalcTrigger(prev => prev + 1);
+    };
+    const handleUpdate = () => {
+      setCalcTrigger(prev => prev + 1);
+    };
+    window.addEventListener('api_toggle_changed', handleToggle);
+    window.addEventListener('planetary_positions_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('api_toggle_changed', handleToggle);
+      window.removeEventListener('planetary_positions_updated', handleUpdate);
+    };
+  }, []);
 
   const filteredProfiles = useMemo(() => {
     if (!searchQuery) return sortedProfiles;
@@ -608,10 +690,48 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
 
 
   const [viewMode, setViewMode] = useState('chart'); 
+  const [panelTab, setPanelTab] = useState('interpret'); // 'interpret', 'longevity', 'spirituality'
   const [subChart, setSubChart] = useState('d9');
   const [panchangView, setPanchangView] = useState('transit');
   const [isManualMode, setIsManualMode] = useState(false);
   const [popupInfo, setPopupInfo] = useState(null);
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea')) return;
+    e.preventDefault();
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX - dragPosition.x,
+      y: e.clientY - dragPosition.y
+    };
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMouseMove = (e) => {
+      setDragPosition({
+        x: e.clientX - dragStart.current.x,
+        y: e.clientY - dragStart.current.y
+      });
+    };
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  useEffect(() => {
+    setDragPosition({ x: 0, y: 0 });
+  }, [popupInfo]);
   const [chatMessages, setChatMessages] = useState([
     { role: 'assistant', text: 'AstroWatch AI is ready. Click any planet, house, nakshatra or Shadbala score, then ask a specific question to dig into the profile.' }
   ]);
@@ -621,7 +741,18 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
   const [faqOpen, setFaqOpen] = useState(false);
   const [expandedFaqCat, setExpandedFaqCat] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
+  const [longevityAiResult, setLongevityAiResult] = useState(null);
+  const [longevityAiLoading, setLongevityAiLoading] = useState(false);
+  const [spiritualityAiResult, setSpiritualityAiResult] = useState(null);
+  const [spiritualityAiLoading, setSpiritualityAiLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    setLongevityAiResult(null);
+    setLongevityAiLoading(false);
+    setSpiritualityAiResult(null);
+    setSpiritualityAiLoading(false);
+  }, [selectedProfile]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -645,7 +776,11 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
     };
 
     const makeHouseAnswer = () => {
-      return `The ${promptData.house} House is ruled by ${promptData.rashi} and governs the matters listed. ${baseText}${userQuestion}`;
+      const targetPlanets = promptData.chartPlanets || [];
+      const activeLagnaIndex = isNaN(promptData.lagnaIndex) ? (isNaN(lagnaIndex) ? 0 : lagnaIndex) : promptData.lagnaIndex;
+      const housePlanets = targetPlanets.filter(p => p && (((p.rasiIndex - activeLagnaIndex + 12) % 12) + 1) === promptData.house).map(p => p.planet);
+      const pStr = housePlanets.length > 0 ? `It is occupied by ${housePlanets.join(', ')}.` : 'It is currently unoccupied.';
+      return `The ${promptData.house} House (${promptData.chartLabel || 'Natal'}) falls in the sign of ${promptData.rashi}. ${pStr} ${baseText}${userQuestion}`;
     };
 
     const makeRashiAnswer = () => {
@@ -727,6 +862,54 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
       }, 600);
     }
   };
+  
+  const handleSymbolClick = async (clickData) => {
+    const { title, subtitle, text, promptData } = clickData;
+    
+    setPopupInfo({ title, subtitle, text, isLoadingAI: !!promptData, aiText: null });
+
+    if (promptData) {
+      const userName = profile?.name || 'This person';
+      const rawLagnaName = AstroEngine.SIDEREAL_RASIS[isNaN(lagnaIndex) ? 0 : lagnaIndex] || 'Aries';
+      const lagnaName = rawLagnaName.split(' ')[0];
+      const moonDegree = coreAstro ? coreAstro.moonDegree : 0;
+      const dasaResult = AstroEngine.getDasaData(profile, time, moonDegree);
+      const currentDasa = dasaResult?.current || {};
+      const dasaContext = currentDasa.mahadasha ? `They are currently in a ${currentDasa.mahadasha} Mahadasha and ${currentDasa.antardasha} Antardasha.` : '';
+      
+      // Compute context
+      let parts = [];
+      if (profile.maritalStatus && profile.maritalStatus !== 'Unknown') parts.push(`Marital Status: ${profile.maritalStatus}`);
+      if (profile.careerStatus && profile.careerStatus !== 'Unknown') parts.push(`Career Phase: ${profile.careerStatus}`);
+      if (profile.lifeContext) parts.push(`User Notes: ${profile.lifeContext}`);
+      let baseCtx = parts.length > 0 ? `\n\nCRITICAL CONTEXT: The user's actual life situation is: [${parts.join(' | ')}]. You MUST tailor your prediction to fit this reality perfectly.` : '';
+      
+      const fn = AstroEngine.FUNCTIONAL_ROLES[lagnaIndex];
+      const fnRoleStr = fn ? `\n\nFUNCTIONAL NATURE (For ${lagnaName} Ascendant): Benefics are ${fn.ben.join(', ')}. Malefics are ${fn.mal.join(', ')}. MARAKA is ${fn.mar.join(' and ')}. BADHAKA is ${fn.bad.join(', ')}. Factor this heavily into the prediction.` : '';
+      const personalCtx = baseCtx + fnRoleStr;
+
+      let prompt = '';
+      if (promptData.type === 'spiritual_yoga') {
+         prompt = `Analyze the Classical Vedic Spiritual Yoga called ${title} for ${userName}. Description: "${text}". Involved: ${Array.isArray(promptData.involved) ? promptData.involved.join(', ') : 'Unknown'}.
+Since many spiritual yogas are seen in non-spiritual persons (due to D9/D20 alignments, planet strengths, or physical realities), and vice versa, provide a highly nuanced, non-general explanation. Focus on:
+1. How this yoga manifests internally (subconscious character, psychology) vs. externally (outward spirituality, lifestyle).
+2. What chart factors (like Vimshamsha D20/Navamsha D9 alignments, ascendant lord strength, or planetary dignities) would either activate this yoga for actual spiritual renunciation/practice, or redirect it into worldly, intellectual, or professional pursuits instead.
+Keep it to 3-4 sentences of deeply insightful, personalized Vedic astrology advice. Keep it warm and encouraging.${personalCtx}`;
+      } else if (promptData.type === 'longevity_item') {
+         prompt = `Analyze the Longevity/Maraka factor "${promptData.itemType}" for ${userName}. Detail: "${title}" (${text}). Involved: ${Array.isArray(promptData.value) ? promptData.value.join(', ') : promptData.value}.
+Act as a warm, highly sensitive, and encouraging Vedic Astrologer. Write a 3-4 sentence personalized wellness and vitality advice explaining how this factor influences their vitality.
+Strictly focus on wellness, mitigation, and positive Upayas (Vedic remedies like mantras, charity, or lifestyle adjustments) to strengthen the chart. 
+Do NOT make fatalistic predictions, and do NOT predict the exact timing or cause of death. Make it professional and deeply comforting.${personalCtx}`;
+      }
+
+      if (prompt) {
+         const aiResponse = await AstroEngine.callGemini(prompt, geminiKey, astroLevel, language);
+         setPopupInfo(prev => prev ? ({ ...prev, aiText: aiResponse.text || aiResponse.error, isLoadingAI: false, error: aiResponse.error ? aiResponse.error : null }) : null);
+      }
+    } else {
+      setPopupInfo(prev => prev ? ({ ...prev, isLoadingAI: false }) : null);
+    }
+  };
 
   const profile = useMemo(() => {
     return savedProfiles.find(p => p.name === selectedProfile) || savedProfiles[0];
@@ -734,7 +917,7 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
 
   const coreAstro = useMemo(() => {
     return getPositionsForProfile(profile);
-  }, [profile]);
+  }, [profile, preciseToggle, calcTrigger]);
 
   useEffect(() => {
     if (isManualMode) return;
@@ -755,8 +938,10 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
     if (!profile) return [];
     const lat = profile.sameAsBirth !== false ? numOr(profile.lat, 17.3850) : numOr(profile.currentLat, numOr(profile.lat, 17.3850));
     const lon = profile.sameAsBirth !== false ? numOr(profile.lon, 78.4867) : numOr(profile.currentLon, numOr(profile.lon, 78.4867));
-    return OfflineEphemeris.getPositions(time, lat, lon).planets;
-  }, [profile, time]);
+    const tz = Number(profile.tzone ?? profile.tz ?? 5.5);
+    const tp = getTransitPositions(time, lat, lon, tz);
+    return tp ? tp.planets : [];
+  }, [profile, time, preciseToggle, calcTrigger]);
 
   const shadbalaScores = useMemo(() => {
     if (!coreAstro || !profile) return null;
@@ -776,6 +961,118 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
   const d6Planets = useMemo(() => natalPlanets.map(p => ({ ...p, rasiIndex: getD6RasiIndex(p.fullDegree) })), [natalPlanets]);
   const d20Planets = useMemo(() => natalPlanets.map(p => ({ ...p, rasiIndex: getD20RasiIndex(p.fullDegree) })), [natalPlanets]);
 
+  const yogas = useMemo(() => {
+    if (!natalPlanets || natalPlanets.length === 0) return [];
+    
+    let isDay = true;
+    if (profile) {
+      const tz = Number(profile.tzone ?? profile.tz ?? 5.5);
+      const lat = Number(profile.lat ?? 17.3850);
+      const lon = Number(profile.lon ?? 78.4867);
+      const [y, m, d] = String(profile.dob).split('-').map(Number);
+      const [hr, min] = String(profile.time || '12:00').split(':').map(Number);
+      if ([y, m, d, hr, min, tz, lat, lon].every(Number.isFinite)) {
+        const bDate = new Date(Date.UTC(y, m - 1, d, hr, min) - (tz * 3600000));
+        const sTimesNatal = OfflineEphemeris.getSunTimes(bDate, lat, lon, tz);
+        if (sTimesNatal) {
+          const localDate = new Date(bDate.getTime() + tz * 3600000);
+          const currentMins = localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
+          isDay = currentMins >= (sTimesNatal.sunriseFrac * 60) && currentMins <= (sTimesNatal.sunsetFrac * 60);
+        }
+      }
+    }
+
+    const navamsaLagnaIndex = getD9RasiIndex(lagnaDegree);
+    const navamsaPlacements = {};
+    d9Planets.forEach(p => {
+      if (p) {
+        navamsaPlacements[p.planet || p.name] = p.rasiIndex;
+      }
+    });
+
+    return AstroEngine.calculateYogas(natalPlanets, lagnaIndex, lagnaDegree, {
+      gender: profile?.gender || 'Male',
+      isDay,
+      navamsaLagnaIndex,
+      navamsaPlacements
+    });
+  }, [natalPlanets, lagnaIndex, lagnaDegree, profile, d9Planets]);
+
+  const spiritualYogas = useMemo(() => {
+    if (!natalPlanets || natalPlanets.length === 0) return [];
+    return AstroEngine.calculateSpiritualYogas(natalPlanets, lagnaIndex, lagnaDegree);
+  }, [natalPlanets, lagnaIndex, lagnaDegree]);
+
+  const longevityResult = useMemo(() => {
+    if (!natalPlanets || natalPlanets.length === 0) return null;
+    const functionalRoles = AstroEngine.FUNCTIONAL_ROLES[lagnaIndex] || AstroEngine.FUNCTIONAL_ROLES[0];
+    const chartObj = LongevityEngine.constructChart(natalPlanets, lagnaIndex);
+    return LongevityEngine.evaluateLongevity(chartObj, functionalRoles);
+  }, [natalPlanets, lagnaIndex]);
+
+  const handleAskAiLongevity = async () => {
+    if (!longevityResult) return;
+    setLongevityAiLoading(true);
+    setLongevityAiResult(null);
+
+    const lagnaName = safeStr(AstroEngine.SIDEREAL_RASIS[isNaN(lagnaIndex) ? 0 : lagnaIndex], ' ');
+    const primaryMarakas = longevityResult.marakas.primary.join(', ') || 'None';
+    const secondaryMarakas = longevityResult.marakas.secondary.join(', ') || 'None';
+    const tertiaryMarakas = longevityResult.marakas.tertiary.join(', ') || 'None';
+    const badhakas = longevityResult.marakas.badhakas.join(', ') || 'None';
+    const ayurYogas = longevityResult.ayurYogas.join(' | ') || 'None';
+    const arishtaYogas = longevityResult.arishtaYogas.join(' | ') || 'None';
+
+    const prompt = `Client Name: ${profile?.name || 'User'}. Ascendant: ${lagnaName}. 
+Based on these Parashar Hora Shastra Longevity calculations:
+- Primary Marakas: ${primaryMarakas}
+- Badhakas: ${badhakas}
+- Secondary Marakas (Lords of 3rd and 8th): ${secondaryMarakas}
+- Tertiary Marakas (Lord of 6th, Saturn in 2nd/7th): ${tertiaryMarakas}
+- Ayur Yogas (Vitality/Protection): ${ayurYogas}
+- Arishta Yogas (Health Challenges): ${arishtaYogas}
+
+Act as an expert, warm, and highly sensitive Vedic Astrologer. Write a 3-4 sentence personalized wellness, vitality, and health guidance reading. Keep it encouraging, focus on wellness and mitigation/Upayas (Vedic remedies like charity or mantras), and strictly avoid fatalistic predictions or predictions of exact timing of death. Make it professional and deeply insightful.`;
+
+    const response = await AstroEngine.callGemini(prompt, geminiKey, astroLevel, language);
+    setLongevityAiResult(response.error ? { type: 'error', text: response.error } : { type: 'success', text: response.text });
+    setLongevityAiLoading(false);
+  };
+
+  const handleAskAiSpirituality = async () => {
+    if (!spiritualYogas || spiritualYogas.length === 0) return;
+    setSpiritualityAiLoading(true);
+    setSpiritualityAiResult(null);
+
+    const lagnaName = safeStr(AstroEngine.SIDEREAL_RASIS[isNaN(lagnaIndex) ? 0 : lagnaIndex], ' ');
+    const yogasStr = spiritualYogas.map(y => `${y.name}: ${y.desc}`).join(' | ') || 'None';
+
+    const moonDegree = coreAstro ? coreAstro.moonDegree : 0;
+    const dasaResult = AstroEngine.getDasaData(profile, time, moonDegree);
+    const currentDasa = dasaResult?.current || {};
+    const dasaContext = currentDasa.mahadasha ? `Current Dasha: ${currentDasa.mahadasha} MD, ${currentDasa.antardasha} AD.` : '';
+
+    let parts = [];
+    if (profile.maritalStatus && profile.maritalStatus !== 'Unknown') parts.push(`Marital Status: ${profile.maritalStatus}`);
+    if (profile.careerStatus && profile.careerStatus !== 'Unknown') parts.push(`Career Phase: ${profile.careerStatus}`);
+    if (profile.lifeContext) parts.push(`User Notes: ${profile.lifeContext}`);
+    let baseCtx = parts.length > 0 ? `\n\nCRITICAL CONTEXT: The user's actual life situation is: [${parts.join(' | ')}]. You MUST tailor your prediction to fit this reality perfectly.` : '';
+    
+    const fn = AstroEngine.FUNCTIONAL_ROLES[lagnaIndex];
+    const fnRoleStr = fn ? `\n\nFUNCTIONAL NATURE (For ${lagnaName} Ascendant): Benefics are ${fn.ben.join(', ')}. Malefics are ${fn.mal.join(', ')}. MARAKA is ${fn.mar.join(' and ')}. BADHAKA is ${fn.bad.join(', ')}. Factor this heavily into the prediction.` : '';
+    const personalCtx = baseCtx + fnRoleStr;
+
+    const prompt = `Client Name: ${profile?.name || 'User'}. Ascendant: ${lagnaName}. ${dasaContext}
+Based on these detected Spiritual Yogas (Sanyasa, Moksha, Tapasvi, or general inclinations):
+- Spiritual Yogas: ${yogasStr}
+
+Act as an expert, warm, and highly realized Vedic Astrologer/Guru. Write a 3-4 sentence personalized spiritual path guidance reading. Keep it encouraging, focus on the soul's evolution, inner peace, and suitable paths of yoga/meditation (Karma, Bhakti, Gyan, or Raja yoga) based on their chart. Make it professional and deeply insightful. ${personalCtx}`;
+
+    const response = await AstroEngine.callGemini(prompt, geminiKey, astroLevel, language);
+    setSpiritualityAiResult(response.error ? { type: 'error', text: response.error } : { type: 'success', text: response.text });
+    setSpiritualityAiLoading(false);
+  };
+
   const sunTimes = useMemo(() => {
     const lat = profile?.sameAsBirth !== false ? numOr(profile?.lat, 17.3850) : numOr(profile?.currentLat, numOr(profile?.lat, 17.3850));
     const lon = profile?.sameAsBirth !== false ? numOr(profile?.lon, 78.4867) : numOr(profile?.currentLon, numOr(profile?.lon, 78.4867));
@@ -788,8 +1085,17 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
   return (
     <div className="min-h-screen bg-[#ececd6] text-slate-800 font-sans antialiased flex flex-col">
       <div className="h-12 bg-white/80 border-b border-slate-200 shadow-sm flex items-center justify-between px-4 shrink-0">
-        <button onClick={(e) => { e.preventDefault(); if (onBack) onBack(); }} className="text-[10px] font-bold text-slate-600 hover:text-emerald-700 uppercase tracking-tighter">← Back to Hub</button>
-        <div className="font-serif text-sm font-bold text-amber-900 hidden sm:block">AstroWatch Analytical Studio</div>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button onClick={onBack} className="p-1.5 hover:bg-slate-100 rounded text-slate-650 transition-colors" title="Back to Dashboard">
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <div className="font-serif text-sm font-bold text-amber-900 hidden sm:block">AstroWatch Analytical Studio</div>
+        </div>
+        <div>
+          <PreciseCalculationToggle />
+        </div>
         <div className="text-right text-[10px] sm:text-xs truncate max-w-[260px] text-emerald-900 font-bold font-serif">
           {profile ? `${profile.dob} ${profile.time || ''} | Birth: ${profile.city || profile.place || ''}` : 'No Active Profile'}
         </div>
@@ -949,16 +1255,18 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
               <span>{time.toLocaleDateString('en-GB')}</span> <span className="text-amber-300">{time.toLocaleTimeString()}</span>
             </div>
 
-            <div className="flex bg-slate-800 rounded-full p-1 text-[11px] font-black shadow-lg">
+            <div className="flex bg-slate-800 rounded-full p-1 text-[11px] font-black shadow-lg flex-wrap justify-center gap-0.5">
               <button onClick={() => setViewMode('chart')} className={`px-4 py-1.5 rounded-full ${viewMode==='chart'?'bg-amber-600 text-white shadow':'text-white'}`}>Transit Watch</button>
               <button onClick={() => setViewMode('orrery')} className={`px-4 py-1.5 rounded-full ${viewMode==='orrery'?'bg-cyan-600 text-white shadow':'text-white'}`}>Cosmic Orrery</button>
               <button onClick={() => setViewMode('vargas')} className={`px-4 py-1.5 rounded-full ${viewMode==='vargas'?'bg-purple-600 text-white shadow':'text-white'}`}>Vargas Grid</button>
+              <button onClick={() => setViewMode('muhurtha')} className={`px-4 py-1.5 rounded-full ${viewMode==='muhurtha'?'bg-[#fbbf24] text-[#1c0b00] shadow':'text-white'}`}>Muhurtha Dial</button>
             </div>
           </div>
 
           <div className="flex items-start justify-center flex-1 w-full min-h-0 overflow-auto pb-4">
           {viewMode === 'chart' && <WatchFace time={time} transits={transits} natalPlanets={natalPlanets} lagnaIndex={lagnaIndex} sunTimes={sunTimes} onSymbolClick={handleWatchClick} />}
-          {viewMode === 'orrery' && <CosmicOrrery transits={transits} lagnaIndex={lagnaIndex} onSymbolClick={handleWatchClick} />}
+          {viewMode === 'orrery' && <CosmicOrrery transits={transits} natalPlanets={natalPlanets} lagnaIndex={lagnaIndex} sunTimes={sunTimes} onSymbolClick={handleWatchClick} />}
+          {viewMode === 'muhurtha' && <MuhurthaDialView profile={profile} time={time} geminiKey={geminiKey} astroLevel={astroLevel} language={language} />}
           {viewMode === 'vargas' && (
             <div className="flex flex-col xl:flex-row gap-4 items-center justify-center">
               <NorthIndianChart planets={natalPlanets} lagnaIndex={lagnaIndex} chartTitle="Rasi Kundali (D1)" onSymbolClick={handleWatchClick} />
@@ -976,143 +1284,360 @@ export default function AstroWatchView({ savedProfiles, onBack, currentProfileNa
           </div>
         </main>
 
-        <aside className="w-full lg:w-[340px] shrink-0 bg-[#fdfde8] border border-amber-200 p-3 rounded-2xl shadow-lg flex flex-col overflow-hidden h-[calc(100vh-80px)]">
-          <div className="flex items-center justify-between gap-3 mb-3">
+        <aside className={`w-full lg:w-[360px] shrink-0 bg-[#fdfde8] border border-amber-200 p-3 rounded-2xl shadow-lg flex flex-col overflow-hidden h-[calc(100vh-80px)] ${viewMode === 'muhurtha' ? 'hidden' : ''}`}>
+          <div className="flex items-center justify-between gap-3 mb-2 shrink-0">
             <div>
-              <div className="text-[11px] font-black uppercase tracking-widest text-amber-900">Astro AI Chat</div>
-              <div className="text-[10px] text-slate-500">Ask about planets, nakshatras, houses or shadbala strengths.</div>
+              <div className="text-[11px] font-black uppercase tracking-widest text-amber-900">Astro AI Studio</div>
+              <div className="text-[9px] text-slate-500">Vedic analytical tools & real-time guidance.</div>
             </div>
-            <span className="text-[10px] text-slate-600">Live AI prompt</span>
+            <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-250">Live AI</span>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-3 mb-3 text-[10px] text-slate-700">
-            <div className="font-bold uppercase text-[9px] tracking-wide mb-2">Active context</div>
-            {selectedContext ? (
-              <div className="space-y-1">
-                <div className="font-semibold text-slate-900">{selectedContext.title}</div>
-                {selectedContext.subtitle ? <div className="text-[9px] text-slate-500">{selectedContext.subtitle}</div> : null}
-                <div className="text-[9px] leading-snug text-slate-600 whitespace-pre-wrap">{selectedContext.text}</div>
-              </div>
-            ) : (
-              <div className="text-[9px] text-slate-500">Click a planet, house, nakshatra or shadbala item on the watchface to anchor your AI query.</div>
-            )}
+          <div className="flex bg-amber-250/30 rounded-full p-0.5 text-[9px] mb-3 shrink-0">
+            <button onClick={()=>setPanelTab('interpret')} className={`flex-1 py-1 rounded-full font-bold transition-all text-center ${panelTab==='interpret'?'bg-amber-600 text-white shadow-sm':'text-amber-900 hover:bg-amber-200/50'}`}>Interpretation</button>
+            <button onClick={()=>setPanelTab('spirituality')} className={`flex-1 py-1 rounded-full font-bold transition-all text-center ${panelTab==='spirituality'?'bg-amber-600 text-white shadow-sm':'text-amber-900 hover:bg-amber-200/50'}`}>Spirituality</button>
+            <button onClick={()=>setPanelTab('longevity')} className={`flex-1 py-1 rounded-full font-bold transition-all text-center ${panelTab==='longevity'?'bg-amber-600 text-white shadow-sm':'text-amber-900 hover:bg-amber-200/50'}`}>Longevity</button>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-3">
-            {chatMessages.map((msg, idx) => (
-              <div key={idx} className={`rounded-2xl p-3 ${msg.role === 'assistant' ? 'bg-slate-100 text-slate-800' : 'bg-amber-100/80 text-slate-900 self-end'} shadow-sm`}> 
-                <div className="text-[9px] uppercase tracking-wide font-black mb-1">{msg.role === 'assistant' ? 'AI' : 'You'}</div>
-                <div className="text-[11px] leading-normal whitespace-pre-wrap">{msg.text}</div>
+          {panelTab === 'interpret' && (
+            <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+              {/* Active Context Card */}
+              <div className="bg-white border border-slate-200 rounded-xl p-2.5 mb-2 text-[10px] text-slate-700 shrink-0">
+                <div className="font-bold uppercase text-[8px] tracking-wide mb-1 text-slate-500">Active context</div>
+                {selectedContext ? (
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-slate-900 text-[11px]">{selectedContext.title}</div>
+                    {selectedContext.subtitle ? <div className="text-[8px] text-slate-500">{selectedContext.subtitle}</div> : null}
+                    <div className="text-[9px] leading-snug text-slate-600 whitespace-pre-wrap max-h-[60px] overflow-y-auto">{selectedContext.text}</div>
+                  </div>
+                ) : (
+                  <div className="text-[9px] text-slate-500 italic">Click any planet, house, nakshatra, or yoga on the charts to anchor your AI queries.</div>
+                )}
               </div>
-            ))}
-            {chatLoading && (
-              <div className="rounded-2xl p-3 bg-slate-100 text-slate-800 shadow-sm animate-pulse flex items-center gap-2">
-                <Loader2 size={12} className="animate-spin text-amber-600" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Consulting stars...</span>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
 
-          {/* SUGGESTED FAQS DRAWER */}
-          <div className="border border-amber-100 rounded-xl p-2.5 bg-amber-50/20 mb-2 overflow-y-auto max-h-[140px] shrink-0">
-            <button 
-              type="button"
-              onClick={() => setFaqOpen(!faqOpen)}
-              className="w-full text-left text-[10px] font-bold text-amber-800 flex justify-between items-center outline-none cursor-pointer"
-            >
-              <span className="flex items-center gap-1.5"><span>❓</span> Suggested Questions / FAQs</span>
-              <span className="text-[9px]">{faqOpen ? '▲' : '▼'}</span>
-            </button>
-            
-            {faqOpen && (
-              <div className="mt-2 space-y-1.5">
-                {ASTRO_FAQS.map((cat, cIdx) => {
-                  const isCatExpanded = expandedFaqCat === cIdx;
-                  return (
-                    <div key={cIdx} className="border border-amber-100/40 rounded-lg overflow-hidden bg-white">
-                      <button
-                        type="button"
-                        onClick={() => setExpandedFaqCat(isCatExpanded ? null : cIdx)}
-                        className="w-full text-left px-2 py-1.5 text-[9px] font-bold text-slate-700 bg-slate-50 hover:bg-amber-50 flex justify-between items-center outline-none cursor-pointer animate-fade-in"
-                      >
-                        <span className="flex items-center gap-1.5 text-left">
-                          <span>{cat.icon}</span> {cat.category}
-                        </span>
-                        <span className="text-[8px] text-slate-400">{isCatExpanded ? '▼' : '▶'}</span>
-                      </button>
-                      {isCatExpanded && (
-                        <div className="p-2 bg-white space-y-2">
-                          {cat.subcategories.map((sub, sIdx) => (
-                            <div key={sIdx} className="space-y-1">
-                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tight border-b border-slate-100 pb-0.5">{sub.name}</div>
-                              <ul className="space-y-1 pl-1">
-                                {sub.questions.map((q, qIdx) => (
-                                  <li key={qIdx} className="text-left">
-                                    <button 
-                                      type="button"
-                                      onClick={() => setChatInput(q)}
-                                      className="w-full text-left text-[10px] text-amber-700 hover:text-amber-955 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer transition-colors leading-tight"
-                                    >
-                                      • {q}
-                                    </button>
-                                  </li>
+              {/* Scrollable Chat Area */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2 pr-1 scrollbar-thin">
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`rounded-xl p-2.5 ${msg.role === 'assistant' ? 'bg-slate-100 text-slate-800' : 'bg-amber-100/60 text-slate-900'} shadow-sm`}> 
+                    <div className="text-[8px] uppercase tracking-wide font-black mb-0.5 text-slate-500">{msg.role === 'assistant' ? 'AI' : 'You'}</div>
+                    <div className="text-[10.5px] leading-normal whitespace-pre-wrap">{msg.text}</div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="rounded-xl p-2.5 bg-slate-100 text-slate-800 shadow-sm animate-pulse flex items-center gap-1.5">
+                    <Loader2 size={10} className="animate-spin text-amber-600" />
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Consulting stars...</span>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+
+                {/* SUGGESTED FAQS DRAWER (now inline-scrollable inside interpretation) */}
+                <div className="border border-amber-100 rounded-xl p-2 bg-amber-50/20 mt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setFaqOpen(!faqOpen)}
+                    className="w-full text-left text-[9px] font-bold text-amber-800 flex justify-between items-center outline-none cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1"><span>❓</span> Suggested FAQs / Prompts</span>
+                    <span className="text-[8px]">{faqOpen ? '▲' : '▼'}</span>
+                  </button>
+                  
+                  {faqOpen && (
+                    <div className="mt-2 space-y-1.5 max-h-[180px] overflow-y-auto pr-1">
+                      {ASTRO_FAQS.map((cat, cIdx) => {
+                        const isCatExpanded = expandedFaqCat === cIdx;
+                        return (
+                          <div key={cIdx} className="border border-amber-100/30 rounded-lg overflow-hidden bg-white">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedFaqCat(isCatExpanded ? null : cIdx)}
+                              className="w-full text-left px-2 py-1 text-[9px] font-bold text-slate-700 bg-slate-50 hover:bg-amber-50 flex justify-between items-center outline-none cursor-pointer transition-all"
+                            >
+                              <span className="flex items-center gap-1 text-left">
+                                <span>{cat.icon}</span> {cat.category}
+                              </span>
+                              <span className="text-[8px] text-slate-400">{isCatExpanded ? '▼' : '▶'}</span>
+                            </button>
+                            {isCatExpanded && (
+                              <div className="p-1.5 bg-white space-y-1.5">
+                                {cat.subcategories.map((sub, sIdx) => (
+                                  <div key={sIdx} className="space-y-1">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tight border-b border-slate-100 pb-0.5">{sub.name}</div>
+                                    <ul className="space-y-1 pl-1">
+                                      {sub.questions.map((q, qIdx) => (
+                                        <li key={qIdx} className="text-left">
+                                          <button 
+                                            type="button"
+                                            onClick={() => setChatInput(q)}
+                                            className="w-full text-left text-[9.5px] text-amber-700 hover:text-amber-950 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer transition-colors leading-tight"
+                                          >
+                                            • {q}
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
                                 ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
               </div>
-            )}
-          </div>
 
-          <form onSubmit={handleChatSubmit} className="bg-slate-50 border-t border-slate-200 pt-3">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-slate-700">Ask a specific question</label>
-            <textarea
-              rows={5}
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              disabled={chatLoading}
-              placeholder={selectedContext ? 'Ask about this selected element...' : 'Ask about the chart, or click an element first...'}
-              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition-shadow focus:shadow-outline disabled:opacity-50"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleChatSubmit(e);
-                }
-              }}
-            />
-             <div className="mt-3 flex flex-wrap gap-2 items-center justify-between">
-              <div className="flex flex-wrap gap-2 text-[9px] text-slate-600">
-                <button type="button" disabled={chatLoading} onClick={() => setChatInput('How does this placement shape career and reputation?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition disabled:opacity-50">Career</button>
-                <button type="button" disabled={chatLoading} onClick={() => setChatInput('What does this tell me about relationships and emotions?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition disabled:opacity-50">Relationships</button>
-                <button type="button" disabled={chatLoading} onClick={() => setChatInput('What is the most important takeaway from this chart element?')} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200 transition disabled:opacity-50">Summary</button>
-              </div>
-              <button type="submit" disabled={chatLoading} className="rounded-full bg-amber-600 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-amber-700 transition disabled:opacity-50">
-                {chatLoading ? 'Asking...' : 'Ask Astro AI'}
-              </button>
+              {/* Chat Submit Form */}
+              <form onSubmit={handleChatSubmit} className="bg-slate-50 border-t border-slate-250 pt-2 shrink-0">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Ask a custom question</label>
+                <textarea
+                  rows={2}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  disabled={chatLoading}
+                  placeholder={selectedContext ? 'Ask about this selected element...' : 'Ask about the chart, or click an element first...'}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-amber-500 transition-colors disabled:opacity-50 resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleChatSubmit(e);
+                    }
+                  }}
+                />
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <div className="flex gap-1 text-[8px] text-slate-500">
+                    <button type="button" disabled={chatLoading} onClick={() => setChatInput('How does this placement shape career?')} className="rounded bg-slate-100 px-1.5 py-0.5 hover:bg-slate-200 transition disabled:opacity-50">Career</button>
+                    <button type="button" disabled={chatLoading} onClick={() => setChatInput('What does this tell me about relationships?')} className="rounded bg-slate-100 px-1.5 py-0.5 hover:bg-slate-200 transition disabled:opacity-50">Love</button>
+                  </div>
+                  <button type="submit" disabled={chatLoading} className="rounded bg-amber-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-amber-700 transition disabled:opacity-50">
+                    {chatLoading ? 'Asking...' : 'Ask AI'}
+                  </button>
+                </div>
+              </form>
             </div>
-            {selectedContext ? <div className="mt-3 text-[9px] text-slate-500">Current target: {selectedContext.title}</div> : null}
-          </form>
+          )}
+
+          {panelTab === 'spirituality' && (
+            <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+              {/* Scrollable Content */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
+                <div className="bg-teal-55/10 border border-teal-200 rounded-xl p-3 shadow-sm text-[10px]">
+                  <div className="font-black text-teal-900 uppercase tracking-widest border-b border-teal-200 pb-1 mb-2">Spiritual Path Yogas</div>
+                  {spiritualYogas.map((y, i) => (
+                    <div 
+                      key={i} 
+                      className="mb-2 p-2 rounded-lg bg-white border border-teal-100 hover:border-teal-300 cursor-pointer transition-all flex items-start justify-between group shadow-xs"
+                      onClick={() => handleSymbolClick({
+                        title: y.name,
+                        subtitle: 'Spiritual Yoga',
+                        text: y.desc,
+                        promptData: { type: 'spiritual_yoga', involved: y.involved, yoga: y }
+                      })}
+                    >
+                      <div className="flex-1">
+                        <div className="font-bold text-teal-900 text-[11px] mb-0.5">{y.name}</div>
+                        <div className="text-slate-600 text-[9.5px] leading-snug">{y.desc}</div>
+                      </div>
+                      <span className="text-[8px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-2 shrink-0"><Cpu size={10} /> AI</span>
+                    </div>
+                  ))}
+                  {spiritualYogas.length === 0 && (
+                    <div className="text-slate-500 italic text-center py-4">No prominent spiritual yogas detected in the core birth chart.</div>
+                  )}
+                </div>
+
+                {/* Inline AI guidance result */}
+                {spiritualityAiResult && (
+                  <div className="bg-white p-3 rounded-xl border border-teal-100 shadow-sm animate-in fade-in duration-200">
+                    <div className="font-bold text-[9px] uppercase text-teal-700 mb-1.5 flex items-center gap-1">
+                      <Cpu size={12}/> AI Guru Guidance:
+                    </div>
+                    <p className="text-[10.5px] text-slate-800 font-serif leading-relaxed italic border-l-2 border-teal-400 pl-2.5">
+                      {spiritualityAiResult.text}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Sticky bottom AI Spiritual button */}
+              <div className="pt-2 border-t border-slate-200 bg-slate-50/50 shrink-0">
+                <button 
+                  type="button"
+                  onClick={handleAskAiSpirituality} 
+                  disabled={spiritualityAiLoading || spiritualYogas.length === 0} 
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-colors disabled:opacity-50 uppercase tracking-wider"
+                >
+                  {spiritualityAiLoading ? <Loader2 size={12} className="animate-spin"/> : <span>🧘</span>}
+                  Get AI Spiritual Path Guidance
+                </button>
+              </div>
+            </div>
+          )}
+
+          {panelTab === 'longevity' && (
+            <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+              {/* Scrollable Content */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
+                {longevityResult ? (
+                  <div className="space-y-3">
+                    <div className="border border-rose-200 rounded-xl p-3 bg-rose-50/10 text-[10px] text-slate-800">
+                      <div className="font-black text-rose-900 uppercase tracking-widest border-b border-rose-200 pb-1 mb-2 text-left">Longevity & Maraka Analysis</div>
+                      
+                      <div className="space-y-1.5 text-left mb-3">
+                        <div className="font-bold text-[9px] uppercase tracking-wide text-rose-700 font-serif">Maraka & Badhaka Lords:</div>
+                        <ul className="space-y-1">
+                          <li 
+                            className="p-1.5 rounded-lg bg-white border border-rose-100/50 hover:border-rose-200 cursor-pointer transition-all flex items-center justify-between group shadow-2xs"
+                            onClick={() => handleSymbolClick({ title: 'Primary Maraka Lords', subtitle: 'Maraka Evaluation', text: 'Primary Maraka lords (lords of 2nd and 7th houses) indicate physical vulnerabilities, health check periods, and life transition cycles.', promptData: { type: 'longevity_item', itemType: 'Primary Maraka Lords', value: longevityResult.marakas.primary } })}
+                          >
+                            <div>
+                              <strong className="text-rose-900">Primary (2nd/7th):</strong> <span className="text-slate-700 font-bold ml-1">{longevityResult.marakas.primary.join(', ') || 'None'}</span>
+                            </div>
+                            <span className="text-[8px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0"><Cpu size={10} /> AI</span>
+                          </li>
+                          <li 
+                            className="p-1.5 rounded-lg bg-white border border-rose-100/50 hover:border-rose-200 cursor-pointer transition-all flex items-center justify-between group shadow-2xs"
+                            onClick={() => handleSymbolClick({ title: 'Badhaka Lords', subtitle: 'Maraka Evaluation', text: 'Badhaka lords indicate stubborn obstructions or hidden challenges, determined by whether the Ascendant sign is Movable, Fixed, or Dual.', promptData: { type: 'longevity_item', itemType: 'Badhaka Lords', value: longevityResult.marakas.badhakas } })}
+                          >
+                            <div>
+                              <strong className="text-amber-900">Badhakas:</strong> <span className="text-slate-700 font-bold ml-1">{longevityResult.marakas.badhakas.join(', ') || 'None'}</span>
+                            </div>
+                            <span className="text-[8px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0"><Cpu size={10} /> AI</span>
+                          </li>
+                          <li 
+                            className="p-1.5 rounded-lg bg-white border border-rose-100/50 hover:border-rose-200 cursor-pointer transition-all flex items-center justify-between group shadow-2xs"
+                            onClick={() => handleSymbolClick({ title: 'Secondary Maraka Lords', subtitle: 'Maraka Evaluation', text: 'Secondary maraka indicators include the lords of the 3rd and 8th houses, which represent primary vitality and lifespan determinants.', promptData: { type: 'longevity_item', itemType: 'Secondary Maraka Lords', value: longevityResult.marakas.secondary } })}
+                          >
+                            <div>
+                              <strong className="text-slate-800 font-medium">Secondary (3rd/8th):</strong> <span className="text-slate-700 ml-1">{longevityResult.marakas.secondary.join(', ') || 'None'}</span>
+                            </div>
+                            <span className="text-[8px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0"><Cpu size={10} /> AI</span>
+                          </li>
+                          <li 
+                            className="p-1.5 rounded-lg bg-white border border-rose-100/50 hover:border-rose-200 cursor-pointer transition-all flex items-center justify-between group shadow-2xs"
+                            onClick={() => handleSymbolClick({ title: 'Tertiary Maraka Lords', subtitle: 'Maraka Evaluation', text: 'Tertiary maraka factors include the 6th house lord of health struggles, or Saturn (Ayush Karaka) associated with Maraka houses.', promptData: { type: 'longevity_item', itemType: 'Tertiary Maraka Lords', value: longevityResult.marakas.tertiary } })}
+                          >
+                            <div>
+                              <strong className="text-slate-800 font-medium">Tertiary (6th/Saturn):</strong> <span className="text-slate-700 ml-1">{longevityResult.marakas.tertiary.join(', ') || 'None'}</span>
+                            </div>
+                            <span className="text-[8px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0"><Cpu size={10} /> AI</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className="space-y-1 text-left mb-3">
+                        <div className="font-bold text-[9px] uppercase tracking-wide text-emerald-700 font-serif">Ayur Yogas (Vitality Factors):</div>
+                        {longevityResult.ayurYogas.length > 0 ? (
+                          <ul className="space-y-1">
+                            {longevityResult.ayurYogas.map((y, idx) => (
+                              <li 
+                                key={idx} 
+                                className="p-1.5 rounded-lg bg-white border border-emerald-100 hover:border-emerald-300 cursor-pointer transition-all flex items-center justify-between group text-emerald-900 shadow-2xs"
+                                onClick={() => handleSymbolClick({ title: y, subtitle: 'Ayur Yoga', text: 'Classical alignment indicating vitality, longevity, or protective planetary combinations in the birth chart.', promptData: { type: 'longevity_item', itemType: 'Ayur Yoga', value: y } })}
+                              >
+                                <span className="font-medium text-[9.5px]">{y}</span>
+                                <span className="text-[8px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0"><Cpu size={10} /> AI</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-[9.5px] text-slate-500 italic pl-1 bg-white p-2 rounded-lg border border-slate-100">No prominent Ayur Yogas detected.</div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 text-left">
+                        <div className="font-bold text-[9px] uppercase tracking-wide text-red-700 font-serif">Arishta Yogas (Health Stress Points):</div>
+                        {longevityResult.arishtaYogas.length > 0 ? (
+                          <ul className="space-y-1">
+                            {longevityResult.arishtaYogas.map((y, idx) => (
+                              <li 
+                                key={idx} 
+                                className="p-1.5 rounded-lg bg-white border border-red-100 hover:border-red-300 cursor-pointer transition-all flex items-center justify-between group text-red-900 shadow-2xs"
+                                onClick={() => handleSymbolClick({ title: y, subtitle: 'Arishta Yoga', text: 'Chart alignment indicating potential physical vulnerability or periods of health stress that require care.', promptData: { type: 'longevity_item', itemType: 'Arishta Yoga', value: y } })}
+                              >
+                                <span className="font-medium text-[9.5px]">{y}</span>
+                                <span className="text-[8px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0"><Cpu size={10} /> AI</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-[9.5px] text-slate-500 italic pl-1 bg-white p-2 rounded-lg border border-slate-100">No prominent Arishta Yogas detected.</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Inline AI interpretation text */}
+                    {longevityAiResult && (
+                      <div className="bg-white p-3 rounded-xl border border-rose-100 shadow-sm animate-in fade-in duration-200">
+                        <div className="font-bold text-[9px] uppercase text-indigo-700 mb-1.5 flex items-center gap-1">
+                          <Cpu size={12}/> AI Vitality Guidance:
+                        </div>
+                        <p className="text-[10.5px] text-slate-800 font-serif leading-relaxed italic border-l-2 border-rose-300 pl-2.5">
+                          {longevityAiResult.text}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 italic text-center py-4 bg-white rounded-xl border border-slate-200">Generating longevity calculations...</div>
+                )}
+              </div>
+
+              {/* Sticky bottom button */}
+              <div className="pt-2 border-t border-slate-200 bg-slate-50/50 shrink-0">
+                <button 
+                  type="button"
+                  onClick={handleAskAiLongevity} 
+                  disabled={longevityAiLoading || !longevityResult} 
+                  className="w-full bg-indigo-650 hover:bg-indigo-755 text-white py-2 rounded-lg font-bold text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-colors disabled:opacity-50 uppercase tracking-wider"
+                >
+                  {longevityAiLoading ? <Loader2 size={12} className="animate-spin"/> : <span>✨</span>}
+                  Get AI Vitality Guidance
+                </button>
+              </div>
+            </div>
+          )}
         </aside>
       </div>
       {popupInfo ? (
-        <div className="fixed inset-0 z-[200] bg-slate-900/35 flex items-center justify-center p-4" onClick={() => setPopupInfo(null)}>
-          <div className="w-full max-w-md bg-[#fdfde8] border-2 border-amber-700 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="bg-amber-800 text-white px-4 py-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-serif font-bold text-sm truncate">{popupInfo.title}</div>
-                {popupInfo.subtitle ? <div className="text-[10px] text-amber-100 uppercase tracking-wider truncate">{popupInfo.subtitle}</div> : null}
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setPopupInfo(null)}>
+          <div 
+            className="bg-[#fdfde8] border-2 border-amber-600 rounded-xl p-6 max-w-md w-full shadow-2xl relative text-left animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto" 
+            onClick={e => e.stopPropagation()}
+            style={{ transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)` }}
+          >
+            <button onClick={() => setPopupInfo(null)} className="absolute top-3 right-3 text-slate-400 hover:text-red-500"><X size={20} /></button>
+            <div className="flex items-center gap-3 mb-4 border-b border-amber-200 pb-3 cursor-move select-none" onMouseDown={handleMouseDown}>
+              <Sparkles className="text-amber-500 shrink-0" size={28} />
+              <div>
+                <h3 className="font-bold font-serif text-lg text-green-900 leading-none mb-1">{String(popupInfo.title)}</h3>
+                {popupInfo.subtitle ? <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{String(popupInfo.subtitle)}</p> : null}
               </div>
-              <button type="button" onClick={() => setPopupInfo(null)} className="p-1 rounded hover:bg-white/15 shrink-0" aria-label="Close details"><X size={16} /></button>
             </div>
-            <div className="p-4 text-sm text-slate-800 font-serif whitespace-pre-wrap leading-relaxed">
-              {popupInfo.text || 'No detail available.'}
+
+            <div className="mb-4 bg-white p-4 rounded-lg shadow-inner border border-amber-100 min-h-[80px]">
+              {popupInfo.isLoadingAI ? (
+                <div className="flex flex-col items-center gap-2 text-amber-600 py-4"><Loader2 className="w-6 h-6 animate-spin" /><span className="text-xs font-bold font-serif">Consulting AI...</span></div>
+              ) : popupInfo.aiText ? (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[10px] uppercase font-bold text-amber-600"><Cpu size={12} /> AI Prediction</div>
+                  <p className="text-sm text-slate-800 font-serif leading-relaxed italic border-l-2 border-amber-300 pl-3 max-h-96 overflow-y-auto pr-4">{String(popupInfo.aiText)}</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-1 font-sans">Classical Significance</div>
+                  <p className="text-sm text-slate-650 font-serif leading-relaxed whitespace-pre-wrap">{String(popupInfo.text || '')}</p>
+                </div>
+              )}
             </div>
+
+            {popupInfo.aiText && (
+              <div>
+                 <div className="text-[10px] uppercase font-bold tracking-widest text-slate-450 mb-1 font-sans">Classical Significance</div>
+                 <p className="text-sm text-slate-600 font-serif leading-relaxed whitespace-pre-wrap">{String(popupInfo.text || '')}</p>
+              </div>
+            )}
           </div>
         </div>
       ) : null}

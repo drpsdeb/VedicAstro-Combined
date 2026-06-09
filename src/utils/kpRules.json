@@ -1,0 +1,3114 @@
+{
+  "INCOME": {
+    "INCOME_FROM_PERSONAL_EFFORTS": {
+      "matter": "Income from Personal Efforts",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "INCOME_FROM_JEWELRY_PRECISION_STONES_METALS_MOR_ETC": {
+      "matter": "Income from Jewelry, Precision Stones, Metals, Mortgages, Negotiable Assets, Voice related, Eyes, Cosmetics, Lending business, Collection agency",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "INCOME_FROM_MIND_RELATED_PSYCHOLOGY_GENERAL_TRA_ETC": {
+      "matter": "Income from Mind related, Psychology, General Trading, Local delivery, Written communication, Branding, Marketing, Social Media, TV, Radio, Internet, Book Store, Library",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "INCOME_FROM_REAL_ESTATE_HOUSES_BUILDINGS_LAND_V_ETC": {
+      "matter": "Income from Real estate, Houses, Buildings, Land, Vehicles, Transport, Agriculture, Gardens, Herbs, Education, Schools, Junior Colleges",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "INCOME_FROM_KIDS_CHILDREN_RECREATION_ENTERTAINM_ETC": {
+      "matter": "Income from Kids, Children, Recreation, Entertainment, Amusements, Sports and Games, Banquet, Merriments, Romance and similar interests, Cinema, Drama, Opera, Dance & Music, Playing Cards, Crossword puzzles, Dice, Horse racing, Betting, Lottery, Gambling, Chanting, Mantra, Rituals, Stock Exchange, Love affairs, Courtships, Good learning and wisdom, Festivities, Events Management",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "INCOME_FROM_JOB_PET_ANIMALS_SMALL_CATTLE_SANITA_ETC": {
+      "matter": "Income from Job, Pet Animals, Small Cattle, Sanitation and Public Health",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        2,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "INCOME_FROM_PARTNERSHIP_BUSINESS_PUBLIC_RELATIO_ETC": {
+      "matter": "Income from Partnership Business, Public Relations, Public Contracts, Public Service",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "MORTUARY_BURIAL_GROUND_UNEARNED_INCOME_INHERITA_ETC": {
+      "matter": "Mortuary, Burial Ground, Unearned income, Inheritance, Legacies, Wills and Insurance, Surgeons, Medical Officers, Health Inspectors, Slaughter Houses, Butchery, Flood and Fire, Epidemics dealing, Earthquakes related, Corruption, Dowry",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "PHILOSOPHY_AND_RELIGION_RELIGIOUS_MEDITATION_YO_ETC": {
+      "matter": "Philosophy and Religion, Religious, Meditation, Yoga, Astrology, Vastu, Numerology, Occult Science, Research and Invention, Senior Colleges, Universities, Publishing books of intrinsic value, Import and Export, Pilgrimage, Charity, Discovery and exploration, Legal arbitration, Long journeys by Air, Land and Sea, Emigration and immigration Department",
+      "primaryCusp": 9,
+      "primaryHouses": [
+        9
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "OWN_INDEPENDENT_OR_CONSULTING_PROFESSION_SUCH_A_ETC": {
+      "matter": "Own Independent or Consulting Profession (such as a Lawyer, CA, Engineer, Architect, Plumber, Carpenter, Electrician, Management, etc.), Politics, Government, Minister, Head of State or Country, Owners and Trainers of Horses, Olympics Athletics, Judges and Stewards, President in Race clubs, Joint Venture",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "FRIENDSHIP_FOREIGN_COLLABORATION_ELECTION": {
+      "matter": "Friendship, Foreign collaboration, Election",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        2,
+        6
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "PURCHASES_AND_INVESTMENTS_PRISONS_OCCULT_RESEAR_ETC": {
+      "matter": "Purchases and Investments, Prisons, Occult Research, Success in a foreign land, Spies, Secret and and Occult Societies, Mystery and Psychic research,  Investigation, Detective work, Jails and Asylums, Sanatorium, Nursing Home, Mental Hospitals, Boot-legging, Smuggling, Black-mailing",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "EARNING_MONEY_THROUGH_ILLEGAL_MEANS": {
+      "matter": "Earning money through illegal means",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        8,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn",
+          "Rahu"
+        ],
+        "specialRule": "Rahu / Saturn"
+      }
+    },
+    "INCREASE_IN_ORNAMENTS_JEWELS_PRECIOUS_METALS_AN_ETC": {
+      "matter": "Increase in ornaments, jewels, precious metals and stones",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        8,
+        10,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "INSURANCE_CLAIM_SUPPORTED_CHECK_8TH_HOUSE_FOR_F_ETC": {
+      "matter": "Insurance claim supported (Check 8th house for final result)",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        8,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mercury",
+          "Jupiter"
+        ],
+        "specialRule": "Mercury / Jupiter"
+      }
+    },
+    "LEGACY_GRATUITY": {
+      "matter": "Legacy, Gratuity",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        8,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Jupiter"
+        ]
+      }
+    },
+    "MEDICAL_CLAIM": {
+      "matter": "Medical claim",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        6,
+        8,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "WINNING_LOTTERY": {
+      "matter": "Winning Lottery",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        5,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "WINNING_LOTTERY_HUGE_MONEY": {
+      "matter": "Winning Lottery + Huge money",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        2
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "WINNING_LOTTERY_HUGE_MONEY_FIRST_PRIZE": {
+      "matter": "Winning Lottery + Huge money + First prize",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        2
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Jupiter"
+        ]
+      }
+    },
+    "SPECULATIVE_INCOME": {
+      "matter": "Speculative income",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        2,
+        8,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "REPAYING_LOAN_TAKEN_FROM_BANK": {
+      "matter": "Repaying loan taken from bank",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "RETURNING_BORROWED_MONEY": {
+      "matter": "Returning borrowed money",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        4,
+        5,
+        8,
+        10
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "ANCESTRAL_WEALTH": {
+      "matter": "Ancestral wealth",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        2,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "GETTING_A_HIDDEN_TREASURE": {
+      "matter": "Getting a hidden treasure",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        4,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn",
+          "Rahu"
+        ],
+        "specialRule": "Rahu / Saturn"
+      }
+    },
+    "INHERITANCE_OF_VEHICLES_OR_PROPERTY": {
+      "matter": "Inheritance of Vehicles or Property",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        4,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "RECEIPT_OF_GIFTS": {
+      "matter": "Receipt of Gifts",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        6,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "TAKING_A_LOAN_TO_REPAY_A_LOAN": {
+      "matter": "Taking a loan to repay a loan",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        2,
+        5,
+        8,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "ASTROLOGER": {
+      "matter": "Astrologer",
+      "primaryCusp": 9,
+      "primaryHouses": [
+        9
+      ],
+      "supportingHouses": [
+        4,
+        11,
+        2,
+        6,
+        10
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "PROMOTION": {
+      "matter": "Promotion",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        2,
+        10,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "RECOGNITION_IN_JOB": {
+      "matter": "Recognition in Job",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        6
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "SALARY_INCREMENT_AND_PROMOTION": {
+      "matter": "Salary increment and promotion",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        2,
+        10,
+        11
+      ],
+      "negatingHouses": [
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    }
+  },
+  "LOSSES": {
+    "DEBT_RIDDEN_LIFE": {
+      "matter": "Debt ridden life",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "LACK_OF_INCOME_FROM_ANY_RELEVANT_HOUSE": {
+      "matter": "Lack of income from any relevant house",
+      "primaryCusp": null,
+      "primaryHouses": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "BORN_TO_BE_POOR": {
+      "matter": "Born to be poor",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "LOSS_OF_WEALTH": {
+      "matter": "Loss of wealth",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "WEALTHLESSNESS": {
+      "matter": "Wealthlessness",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "POVERTY": {
+      "matter": "Poverty",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "LOSS_OF_INCOME_FROM_JOB": {
+      "matter": "Loss of income from job",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "LOSS_OF_INCOME_FROM_RETIREMENT": {
+      "matter": "Loss of income from retirement",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5,
+        9
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "LOSING_THROUGH_FRIENDS": {
+      "matter": "Losing through friends",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        4,
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": null
+    },
+    "LOSS_IN_INVESTMENT": {
+      "matter": "Loss in investment",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        1,
+        5,
+        8
+      ],
+      "negatingHouses": [
+        2,
+        6,
+        11
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    }
+  },
+  "CHILD_BIRTH": {
+    "FOR_WOMEN_FIRST_PREGNANCY": {
+      "matter": "For women, first pregnancy",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        2,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "FOR_WOMEN_SECOND_PREGNANCY": {
+      "matter": "For women, second pregnancy",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        5,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "FOR_WOMEN_THIRD_PREGNANCY": {
+      "matter": "For women, third pregnancy",
+      "primaryCusp": 9,
+      "primaryHouses": [
+        9
+      ],
+      "supportingHouses": [
+        2,
+        5,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "FOR_WOMEN_FOURTH_PREGNANCY": {
+      "matter": "For women, fourth pregnancy",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        2,
+        5
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "FOR_WOMEN_FIFTH_PREGNANCY": {
+      "matter": "For women, fifth pregnancy",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [
+        5,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "FOR_WOMEN_SIX_PREGNANCY_ONWARDS_5_7_9_11_2": {
+      "matter": "For women, six pregnancy onwards 5, 7, 9, 11, 2",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [
+        2,
+        5,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "FOR_MEN_AVOID_PREDICTING_IF_UNAVOIDABLE_CHECK_1_ETC": {
+      "matter": "For men, avoid predicting. If unavoidable, check 11th houses for all children",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        2,
+        5
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "FOR_WOMEN_AND_MEN_IF_5TH_HOUSE_LORD_AND_ITS_STA_ETC": {
+      "matter": "For women and men, if <5>th house lord and it's star lord are in barren signs of Aries, Gemini, Leo or Virgo",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female",
+        "barrenSigns": true
+      }
+    },
+    "FOR_WOMEN_AND_MEN_IF_5TH_HOUSE_LORD_OR_ITS_STAR_ETC": {
+      "matter": "For women and men, if <5>th house lord or it's star lord in a fruitful sign of Taurus, Cancer, Libra, Scorpio, Sagittarius, Capricorn, Aquarius, Pisces",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [
+        2,
+        5,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "gender": "female"
+      }
+    },
+    "IF_THE_5TH_HOUSE_SUB_LORD_IS_IN_BARREN_SIGN_BUT_ETC": {
+      "matter": "If the <5>th house sub lord is in Barren sign but its star lord is in a fruitful sign and signifies 2, 5, or 11",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "barrenSigns": true
+      }
+    },
+    "GENDER_OF_CHILD": {
+      "matter": "Gender of child",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": null
+    },
+    "ENUNCH_NEITHER_MALE_OR_FEMALE_CHILD_BORN_IF_5TH_ETC": {
+      "matter": "Enunch (neither male or female) child born if <5>th house sub lord is Mercury in Mercury's own star of Ashlesha, Jayeshta, or Revati",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mercury"
+        ],
+        "specialRule": "Enunch"
+      }
+    },
+    "IF_MOON_IN_ASWINI_STAR_THEN_CHILD_BIRTH_IS_POSS_ETC": {
+      "matter": "If Moon in Aswini star, then child birth is possible only if Rahu is favorable",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Moon",
+          "Rahu"
+        ]
+      }
+    },
+    "EVERY_PREGNANCY_IS_CONSIDERED_A_CHILD_IN_KP_AST_ETC": {
+      "matter": "Every pregnancy is considered a child in KP Astrology",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": null
+    },
+    "IF_5TH_HOUSE_SUB_LORD_IS_MARS_RAHU_OR_SUN": {
+      "matter": "If <5>th house sub lord is = Mars, Rahu or Sun",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Sun",
+          "Mars",
+          "Rahu"
+        ],
+        "specialRule": "Miscarriage or Abortion"
+      }
+    },
+    "DENIAL_OF_CHILD_BIRTH": {
+      "matter": "Denial of Child birth",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        1,
+        4,
+        10
+      ],
+      "negatingHouses": [
+        2,
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "DELAY_IN_CHILD_BIRTH_IF_SATURN_IS_THE_SUB_LORD__ETC": {
+      "matter": "Delay in child birth if Saturn is the sub lord especially during a Dasa + Bukthi of Saturn or in a planet in Saturn star",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn"
+        ],
+        "specialRule": "Saturn is a delay maker"
+      }
+    },
+    "CHILD_BIRTH_ONLY_IF_MAHADASA_LORD_STARLORD_NOT__ETC": {
+      "matter": "Child birth only if Mahadasa lord + Starlord not in barren sign. One of them must be in a fruitful zodiac sign.",
+      "primaryCusp": null,
+      "primaryHouses": [],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        4,
+        10
+      ],
+      "conditions": {
+        "barrenSigns": true
+      }
+    }
+  },
+  "DIFFICULTY": {
+    "ALWAYS_IN_POOR_HEALTH": {
+      "matter": "Always in poor health",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        6,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "FREQUENT_HOSPITALIZATION_DUE_TO_ACCIDENTS": {
+      "matter": "Frequent hospitalization due to accidents",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        6,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars"
+        ]
+      }
+    },
+    "SURGERY": {
+      "matter": "Surgery",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        6,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Sun",
+          "Mars"
+        ],
+        "specialRule": "Mars / Sun"
+      }
+    },
+    "LIFE_RUINED": {
+      "matter": "Life ruined",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn"
+        ],
+        "maraka": true,
+        "badhaka": true,
+        "specialRule": "Maraka + Badaka + Saturn in 8"
+      }
+    },
+    "LIFE_LONG_DISEASES": {
+      "matter": "Life long diseases",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        1,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "WEAK_LAGNA": {
+      "matter": "Weak lagna",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        5,
+        6,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "POLITICAL_FAILURE_PROMISED_CHECK_10TH_HOUSE_FOR_ETC": {
+      "matter": "Political failure promised (Check 10th house for final result)",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "BLINDNES_IN_LEFT_EYE": {
+      "matter": "Blindnes in left eye",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        1
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Sun",
+          "Moon"
+        ],
+        "waterySigns": true,
+        "specialRule": "(For Girls Sun in Watery sign of Cancer, Scorpio, or Pisces)\n1 + (For Boys Moon in Watery sign in Cancer, Scorpio, or Pisces)"
+      }
+    },
+    "BLINDNESS_IN_RIGHT_EYE": {
+      "matter": "Blindness in right eye",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        1
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Sun",
+          "Moon"
+        ],
+        "waterySigns": true,
+        "specialRule": "(For Girls Moon in Watery sign of Cancer, Scorpio, or Pisces)\n1 + (For Boys Sun in Watery sign in Cancer, Scorpio, or Pisces)"
+      }
+    },
+    "BLINDNESS_IN_BOTH_EYES": {
+      "matter": "Blindness in both eyes",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        1
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Sun",
+          "Moon"
+        ],
+        "waterySigns": true,
+        "specialRule": "Moon and Sun in Watery sign of Cancer, Scorpio, or Pisces"
+      }
+    },
+    "BLINDNESS_THROUGH_ACCIDENT": {
+      "matter": "Blindness through accident",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        1,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Sun",
+          "Moon"
+        ],
+        "waterySigns": true,
+        "specialRule": "(Moon / Sun in Watery sign as per gender of child)"
+      }
+    },
+    "TIMID_AND_COWARD_PERSON": {
+      "matter": "Timid and coward person",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn"
+        ]
+      }
+    },
+    "ENMITY_WITH_YOUNGER_SIBLINGS": {
+      "matter": "Enmity with younger siblings",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        6,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "SCHOOL_EDUCATION_DAMAGED": {
+      "matter": "School education damaged",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        3,
+        5,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "SCHOOL_EDUCATION_FAILURE": {
+      "matter": "School education failure",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "SCHOOL_EDUCATION_CHANGE_OF_SCHOOL": {
+      "matter": "School education change of school",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        3
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "THEFT_OF_VEHICLE": {
+      "matter": "Theft of vehicle",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        6,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn",
+          "Rahu"
+        ],
+        "specialRule": "Saturn / Rahu"
+      }
+    },
+    "LOOSE_THINKING": {
+      "matter": "Loose thinking",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        1,
+        4,
+        6,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "CHRONIC_ILLNESS_AND_DISEASE": {
+      "matter": "Chronic illness and disease",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        1,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn"
+        ]
+      }
+    },
+    "UNKNOWN_DISEASE_IN_MEDICAL_HISTORY": {
+      "matter": "Unknown disease in medical history",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn",
+          "Ketu"
+        ],
+        "specialRule": "Ketu / Saturn"
+      }
+    },
+    "ILL_HEALTH": {
+      "matter": "Ill Health",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        1,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "RESIGNATION_FROM_JOB_IN_HASTE": {
+      "matter": "Resignation from job in haste",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        2,
+        8,
+        9,
+        10
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "LOSS_OF_JOB": {
+      "matter": "Loss of job",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "CHANGE_OF_JOB": {
+      "matter": "Change of job",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "CHANGE_OF_PROFESSIONAL_CAREER": {
+      "matter": "Change of professional career",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        9
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "ACCIDENT": {
+      "matter": "Accident",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        1
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "ACCIDENT_HOSPITALISATION": {
+      "matter": "Accident + Hospitalisation",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        1,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "ACCIDENT_CURE": {
+      "matter": "Accident + Cure",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        1,
+        5,
+        11
+      ],
+      "negatingHouses": [
+        6,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "CRIMINAL_MIND": {
+      "matter": "Criminal Mind",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        5,
+        1
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "DEPRESSION": {
+      "matter": "Depression",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        1,
+        3,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "DISGRACE_ILL_REPUTATION_SCANDALS": {
+      "matter": "Disgrace, ill reputation, scandals",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        1,
+        5,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "MADNESS": {
+      "matter": "Madness",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        6,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Moon",
+          "Mercury",
+          "Saturn",
+          "Ketu"
+        ],
+        "specialRule": "Moon, Mercury, Ketu, Saturn"
+      }
+    },
+    "PERSON_OF_NUISANCE": {
+      "matter": "Person of nuisance",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        5
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "SUICIDE": {
+      "matter": "Suicide",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        4,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars",
+          "Mercury",
+          "Saturn",
+          "Rahu",
+          "Ketu"
+        ],
+        "maraka": true,
+        "badhaka": true,
+        "specialRule": "Mars, Saturn, Rahu, Ketu, Mercury + Bhadaka / Maraka"
+      }
+    },
+    "INCOME_TAX_TROUBLE": {
+      "matter": "Income tax trouble",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        7,
+        8,
+        9,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "LOSS_OF_REPUTATION": {
+      "matter": "Loss of reputation",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        7,
+        8,
+        9,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "PROBLEMS_IN_SERVICE": {
+      "matter": "Problems in service",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        5,
+        6,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "TERMINATION_OF_SERVICE": {
+      "matter": "Termination of service",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        9
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "SUSPENSION_FROM_SERVICE": {
+      "matter": "Suspension from service",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        1,
+        5,
+        9,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "BAD_LUCK_IN_ALL_FORMS": {
+      "matter": "Bad luck in all forms",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        5,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars",
+          "Saturn"
+        ],
+        "specialRule": "Saturn, Mars"
+      }
+    },
+    "DEAF_AND_DUMB": {
+      "matter": "Deaf and Dumb",
+      "primaryCusp": 2,
+      "primaryHouses": [
+        2
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Rahu"
+        ],
+        "waterySigns": true,
+        "specialRule": "Sub lord Rahu + influence of watery sign"
+      }
+    },
+    "DISEASE_CAUSING_DEFECT_IN_THE_BODY": {
+      "matter": "Disease causing defect in the body",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        6,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "HOUSE_ARREST_AND_DETENTION": {
+      "matter": "House arrest and detention",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        4,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": null
+    },
+    "IMPRISONMENT": {
+      "matter": "Imprisonment",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        2,
+        3,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Rahu"
+        ],
+        "gender": "male",
+        "specialRule": "Rahu as House Sub lord"
+      }
+    },
+    "INSANITY": {
+      "matter": "Insanity",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        6,
+        8
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Moon",
+          "Saturn",
+          "Rahu"
+        ],
+        "specialRule": "Moon + Malefic Saturn and Rahu connecting"
+      }
+    },
+    "MIND_TO_COMMIT_CRIME": {
+      "matter": "Mind to commit crime",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        6,
+        8,
+        10
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars",
+          "Rahu"
+        ],
+        "specialRule": "Mars, Rahu"
+      }
+    },
+    "MIND_TO_RAPING": {
+      "matter": "Mind to raping",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        5,
+        6,
+        8,
+        10
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars"
+        ]
+      }
+    },
+    "MENTALLY_RETARDED_CHILD_SPECIAL_NEEDS_CHILD": {
+      "matter": "Mentally retarded child / Special needs child",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Moon"
+        ],
+        "gender": "male",
+        "specialRule": "Moon and Lagna at 90 degrees from each other on either direction"
+      }
+    },
+    "SLIGHTLY_MENTALLY_AFFECTED_CHILD": {
+      "matter": "Slightly mentally affected child",
+      "primaryCusp": 1,
+      "primaryHouses": [
+        1
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Moon"
+        ],
+        "gender": "male",
+        "specialRule": "Moon and Lagna at 30/45/60/120 from each other on either side"
+      }
+    },
+    "ADDICTION": {
+      "matter": "Addiction",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "negatingHouses": [
+        5,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars",
+          "Venus",
+          "Saturn",
+          "Rahu"
+        ],
+        "specialRule": "Saturn, Mars, Rahu, Venus"
+      }
+    },
+    "FULL_RECOVERY_CURE_FROM_DISEASE_GOOD_HEALTH": {
+      "matter": "Full recovery / cure from disease / Good health",
+      "primaryCusp": 6,
+      "primaryHouses": [
+        6
+      ],
+      "supportingHouses": [
+        5,
+        11
+      ],
+      "negatingHouses": [
+        6,
+        8,
+        12
+      ],
+      "conditions": null
+    }
+  },
+  "MARRIAGE": {
+    "SCANDALOUS_LOVE_AFFAIR": {
+      "matter": "Scandalous love affair",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        8,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "LIVE_IN_PARTNER_PREMARITAL_SEX": {
+      "matter": "Live in partner / Premarital sex",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        8,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "ILLICIT_RELATIONSHIP": {
+      "matter": "Illicit relationship",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        2,
+        8,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Venus",
+          "Rahu"
+        ],
+        "specialRule": "Rahu / Venus"
+      }
+    },
+    "RAPED_BY_SOMEONE": {
+      "matter": "Raped by someone",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        8,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars",
+          "Saturn",
+          "Rahu"
+        ],
+        "specialRule": "Mars, Rahu, Saturn"
+      }
+    },
+    "RAPING_SOMEONE": {
+      "matter": "Raping someone",
+      "primaryCusp": 8,
+      "primaryHouses": [
+        8
+      ],
+      "supportingHouses": [
+        5,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "TERMINATION_OF_LOVE_AFFAIRS": {
+      "matter": "Termination of love affairs",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        4,
+        6,
+        8,
+        10,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "MARRIAGE": {
+      "matter": "Marriage",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "fruitfulSigns": true
+      }
+    },
+    "SEPARATION": {
+      "matter": "Separation",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        1,
+        6,
+        10
+      ],
+      "negatingHouses": [
+        2,
+        7,
+        11
+      ],
+      "conditions": null
+    },
+    "PERIODS_OF_LONELINESS_IN_MARRIED_LIFE": {
+      "matter": "Periods of loneliness in Married life",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        1
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "MARRIAGE_THROUGH_ADVERTISEMENT": {
+      "matter": "Marriage through advertisement",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        3
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "LOVELESS_MARRIAGE_DELAYED_MARRIAGE_MARRYING_A_N_ETC": {
+      "matter": "Loveless marriage, Delayed marriage, Marrying a neighbor or within family circles",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        4
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "LOVE_MARRIAGE": {
+      "matter": "Love marriage",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        5
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "SPOUSE_LEAVES_FOR_SOME_PERIODS_OF_TIME": {
+      "matter": "Spouse leaves for some periods of time",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        6
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "ARRANGED_MARRIAGE_NAGGING_SPOUSE": {
+      "matter": "Arranged marriage, Nagging spouse",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        8
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "MARRYING_A_STRANGER_A_TEACHER_RELIGIOUS_AND_SPI_ETC": {
+      "matter": "Marrying a stranger, a teacher, Religious and Spiritual practices together",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        9
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "DIGNIFIED_PARTNER_PERIODS_OF_LACK_OF_FULFILMENT": {
+      "matter": "Dignified partner, Periods of lack of fulfilment",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        10
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "SICKLY_PARTNER_MEDICAL_EXPENSES_DUE_TO_PARTNER": {
+      "matter": "Sickly partner, Medical expenses due to partner",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "TOTAL_FULFILLMENT_IN_MARRIAGE_BEST_FRIENDS_AS_L_ETC": {
+      "matter": "Total fulfillment in marriage, best friends as life partners",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "DELAYED_MARRIAGE": {
+      "matter": "Delayed marriage",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        2,
+        11,
+        4,
+        10
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "MARRYING_A_WIDOW_A_DIVORCEE_OR_STRANGE_AGE_DIFF_ETC": {
+      "matter": "Marrying a widow, a divorcee, or strange age difference",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        2,
+        7,
+        11
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Saturn"
+        ],
+        "specialRule": "Saturn as house sub lord"
+      }
+    },
+    "MARRYING_A_LOWLY_PERSON": {
+      "matter": "Marrying a lowly person",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Rahu"
+        ],
+        "specialRule": "Rahu as house sub lord"
+      }
+    },
+    "MARRYING_A_FOREIGNER_OR_OUT_OF_CASTE_MOSTLY_A_C_ETC": {
+      "matter": "Marrying a foreigner or out of caste (Mostly a Christian)",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Ketu"
+        ],
+        "specialRule": "Ketu as house sub lord"
+      }
+    },
+    "PARTNER_IS_BEAUTIFUL": {
+      "matter": "Partner is beautiful",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        5
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Moon",
+          "Venus"
+        ],
+        "specialRule": "Moon or Venus in 5"
+      }
+    },
+    "SUCCESS_FOR_PARTNER_FAILURE_FOR_SELF": {
+      "matter": "Success for partner, failure for self",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "MARRYING_AN_EMPLOYED_SPOUSE": {
+      "matter": "Marrying an employed spouse",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        4,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "SPOUSE_TO_GET_PROPERTY": {
+      "matter": "Spouse to get property",
+      "primaryCusp": 10,
+      "primaryHouses": [
+        10
+      ],
+      "supportingHouses": [
+        5,
+        8
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "SEXUAL_RELATIONSHIP_WITH_A_FRIEND": {
+      "matter": "Sexual relationship with a friend",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "SEXUAL_RELATIONSHIP_WITH_A_PARTNER": {
+      "matter": "Sexual relationship with a partner",
+      "primaryCusp": 7,
+      "primaryHouses": [
+        7
+      ],
+      "supportingHouses": [
+        5,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        1,
+        6,
+        10
+      ],
+      "conditions": null
+    },
+    "UNHAPPY_MARRIED_LIFE": {
+      "matter": "Unhappy married life",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        4,
+        6,
+        8,
+        10,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        7,
+        11
+      ],
+      "conditions": null
+    },
+    "DIVORCE": {
+      "matter": "Divorce",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        1,
+        6,
+        10,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        7,
+        11
+      ],
+      "conditions": null
+    }
+  },
+  "TRAVEL": {
+    "SHORT_TRAVEL": {
+      "matter": "Short travel",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        9,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "LOCAL_TRAVEL_WITHIN_30_KMS": {
+      "matter": "Local travel within 30 kms",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        9,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "LONG_TRAVEL_30_TO_300_KMS": {
+      "matter": "Long travel 30 to 300 kms",
+      "primaryCusp": 9,
+      "primaryHouses": [
+        9
+      ],
+      "supportingHouses": [
+        3,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "LONG_TRAVEL_ABOVE_300_KMS": {
+      "matter": "Long travel above 300 kms",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "FOREIGN_TRAVEL": {
+      "matter": "Foreign travel",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "FOREIGN_TRAVEL_FOR_EDUCATION": {
+      "matter": "Foreign travel for education",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11,
+        4
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "FOREIGN_TRAVEL_FOR_MEDICAL_TREATMENT": {
+      "matter": "Foreign travel for medical treatment",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11,
+        8
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "FOREIGN_TRAVEL_FOR_JOB": {
+      "matter": "Foreign travel for job",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11,
+        6
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "FOREIGN_TRAVEL_FOR_PLEASURE": {
+      "matter": "Foreign travel for pleasure",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11,
+        5
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "FOREIGN_TRAVEL_WITH_SPOUSE_OR_BUSINESS": {
+      "matter": "Foreign travel with spouse or business",
+      "primaryCusp": 12,
+      "primaryHouses": [
+        12
+      ],
+      "supportingHouses": [
+        3,
+        9,
+        11,
+        7
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "VISA_PASSPORT_GREENCARD_PERMANENT_RESIDENT_CITI_ETC": {
+      "matter": "Visa / Passport / Greencard / Permanent Resident / Citizenship application",
+      "primaryCusp": 3,
+      "primaryHouses": [
+        3
+      ],
+      "supportingHouses": [
+        6,
+        9,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    },
+    "RECEIPT_OF_VISA_PASSPORT_GREENCARD_PERMANENT_RE_ETC": {
+      "matter": "Receipt of Visa / Passport / Greencard / Permanent Resident / Citizenship",
+      "primaryCusp": 9,
+      "primaryHouses": [
+        9
+      ],
+      "supportingHouses": [
+        3,
+        6,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        2,
+        8,
+        11
+      ],
+      "conditions": null
+    }
+  },
+  "PROPERTY": {
+    "CONSTRUCT_HOUSE": {
+      "matter": "Construct house",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "CONSTRUCT_HOUSE_WITH_HOUSING_LOAN": {
+      "matter": "Construct house with housing loan",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        11,
+        12
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "CONSTRUCTION_OF_A_RELIGIOUS_OR_A_SPIRITUAL_BUIL_ETC": {
+      "matter": "Construction of a religious or a spiritual building",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        9,
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "RENTING_A_BUILDING": {
+      "matter": "Renting a building",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        6,
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "OWNING_A_HOUSE": {
+      "matter": "Owning a house",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        2,
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "OCCUPYING_A_NEW_HOUSE": {
+      "matter": "Occupying a new house",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        1,
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "HANDING_OVER_FROM_BUILDER": {
+      "matter": "Handing over from builder",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        11,
+        2
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "requiredPlanets": [
+          "Mars"
+        ]
+      }
+    },
+    "SALE_OF_PROPERTY": {
+      "matter": "Sale of property",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        3,
+        5,
+        10,
+        2,
+        11,
+        8,
+        12
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "TAKING_POSSESSION_OF_AN_APARTMENTFLAT_RESIDENCE": {
+      "matter": "Taking possession of an apartment/flat residence",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        9,
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": {
+        "gender": "male"
+      }
+    },
+    "GETTING_A_TENANT": {
+      "matter": "Getting a tenant",
+      "primaryCusp": 5,
+      "primaryHouses": [
+        5
+      ],
+      "supportingHouses": [
+        4,
+        6,
+        11
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "TENANT_VACATING": {
+      "matter": "Tenant vacating",
+      "primaryCusp": 11,
+      "primaryHouses": [
+        11
+      ],
+      "supportingHouses": [
+        6,
+        8
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    },
+    "PURCHASE_OF_CAR": {
+      "matter": "Purchase of car",
+      "primaryCusp": 4,
+      "primaryHouses": [
+        4
+      ],
+      "supportingHouses": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "negatingHouses": [
+        3,
+        5,
+        8,
+        12
+      ],
+      "conditions": null
+    }
+  }
+}

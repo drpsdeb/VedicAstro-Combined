@@ -188,7 +188,7 @@ export default function SearchableDropdown({
                                     : 'text-slate-700 hover:bg-green-50/50'
                                 }`}
                               >
-                                {fam.head.name} (Self)
+                                {fam.head.name} (Self{fam.head.gender ? ` - ${fam.head.gender}` : ''})
                               </button>
                             )}
                             {fam.members.map((m) => (
@@ -205,7 +205,7 @@ export default function SearchableDropdown({
                                     : 'text-slate-600 hover:bg-green-50/50'
                                 }`}
                               >
-                                ├─ {m.name} {m.relationship ? `(${m.relationship})` : ''}
+                                ├─ {m.name} {m.relationship ? `(${m.relationship}${m.gender ? ` - ${m.gender}` : ''})` : (m.gender ? `(${m.gender})` : '')}
                               </button>
                             ))}
                           </div>
@@ -228,7 +228,7 @@ export default function SearchableDropdown({
                                 : 'text-slate-700 hover:bg-green-50/50'
                             }`}
                           >
-                            {opt.name}
+                            {opt.name} {opt.gender ? `(${opt.gender})` : ''}
                           </button>
                         );
                       })}
@@ -252,7 +252,7 @@ export default function SearchableDropdown({
                           : 'text-slate-700 hover:bg-green-50'
                       }`}
                     >
-                      {opt.name}
+                      {opt.name} {opt.gender ? `(${opt.gender})` : ''}
                     </button>
                   );
                 })

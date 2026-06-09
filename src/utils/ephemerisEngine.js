@@ -2,7 +2,9 @@
 // 🧠 VEDIC ASTROLOGY EPHEMERIS ENGINE, LORE & DATABASE (UNIFIED)
 // ============================================================================
 
-import { calculateYogas } from './yoga';
+import { calculateYogas } from './yoga.js';
+import { calculateSpiritualYogas } from './SpiritualEngine.js';
+import { fetchPlanetaryData } from './apiService.js';
 export const NAKSHATRAS = [
   "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", 
   "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", 
@@ -173,6 +175,86 @@ export const OfflineEphemeris = {
   }
 };
 
+// Map AstrologyAPI planets response to local format
+function mapAstrologyAPIResponse(apiData) {
+  if (!Array.isArray(apiData)) return null;
+
+  const getCleanName = (name) => {
+    if (!name) return '';
+    const nameMap = {
+      sun: 'Sun',
+      moon: 'Moon',
+      mars: 'Mars',
+      mercury: 'Mercury',
+      jupiter: 'Jupiter',
+      venus: 'Venus',
+      saturn: 'Saturn',
+      rahu: 'Rahu',
+      ketu: 'Ketu',
+      ascendant: 'Ascendant',
+      ayanamsa: 'Ayanamsa'
+    };
+    return nameMap[name.toLowerCase()] || name;
+  };
+
+  // Find the Ascendant entry
+  const ascendantEntry = apiData.find(item => getCleanName(item.name) === 'Ascendant');
+  const lagnaSidereal = ascendantEntry ? ascendantEntry.fullDegree : 0;
+  const lagnaRasiIdx = Math.floor(lagnaSidereal / 30);
+
+  // Find the Moon entry to get moonDegree
+  const moonEntry = apiData.find(item => getCleanName(item.name) === 'Moon');
+  const moonDegree = moonEntry ? moonEntry.fullDegree : 0;
+
+  // Map planets
+  const mappedPlanets = apiData
+    .filter(item => {
+      const clean = getCleanName(item.name);
+      return clean !== 'Ascendant' && clean !== 'Ayanamsa';
+    })
+    .map(p => {
+      const clean = getCleanName(p.name);
+      const deg = p.fullDegree;
+      const rasiIdx = Math.floor(deg / 30);
+      const totalNakshatras = (deg * 27) / 360;
+      const nakIndex = Math.floor(totalNakshatras) % 27;
+      const pada = Math.floor((totalNakshatras % 1) * 4) + 1;
+
+      return {
+        planet: clean,
+        name: clean,
+        l: p.fullDegree,
+        longitude: p.fullDegree,
+        fullDegree: p.fullDegree,
+        rasiIndex: rasiIdx,
+        rasi: RASIS[rasiIdx].name,
+        rasiDegrees: p.fullDegree % 30,
+        nakshatra: p.nakshatra || NAKSHATRAS[nakIndex],
+        pada: p.nakshatra_pad || pada,
+        ruler: RASIS[rasiIdx].ruler,
+        isRetro: p.isRetro === true || p.isRetro === 'true'
+      };
+    });
+
+  // Find Ayanamsa
+  const ayanamsaEntry = apiData.find(item => getCleanName(item.name) === 'Ayanamsa');
+  const ayanamsa = ayanamsaEntry ? ayanamsaEntry.fullDegree : 23.85;
+
+  return {
+    planets: mappedPlanets,
+    lagnaIndex: lagnaRasiIdx,
+    lagnaDegree: lagnaSidereal,
+    lagna: {
+      longitude: lagnaSidereal,
+      rasi: RASIS[lagnaRasiIdx].name,
+      rasiDegrees: lagnaSidereal % 30,
+      ruler: RASIS[lagnaRasiIdx].ruler
+    },
+    moonDegree: moonDegree,
+    ayanamsa: ayanamsa
+  };
+}
+
 // Helper to calculate high-precision positions directly from a normalized profile
 export function getPositionsForProfile(profile) {
   if (!profile || !profile.dob) return null;
@@ -184,8 +266,155 @@ export function getPositionsForProfile(profile) {
   const [hr, min] = String(timeStr).split(':').map(Number);
   if (![y, m, d, hr, min, tz, lat, lon].every(Number.isFinite)) return null;
   const birthDate = new Date(Date.UTC(y, m - 1, d, hr, min) - (tz * 3600000));
+
+  // If precise calculation toggle is active, try using cached AstrologyAPI data
+  if (typeof window !== 'undefined' && localStorage.getItem('use_precise_api') === 'true') {
+    const apiKey = localStorage.getItem('astrology_api_key') || localStorage.getItem('API_KEY');
+    const userId = localStorage.getItem('astrology_user_id') || localStorage.getItem('USER_ID');
+    
+    if (apiKey && userId) {
+      const cacheKey = `astroapi_cache_${profile.dob}_${timeStr}_${lat}_${lon}_${tz}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          const mapped = mapAstrologyAPIResponse(parsed);
+          if (mapped) return mapped;
+        } catch (e) {
+          console.error('Failed to parse cached positions:', e);
+        }
+      }
+
+      // If not cached, trigger a background fetch to populate the cache
+      if (!window._fetchingAstrologyAPI) {
+        window._fetchingAstrologyAPI = {};
+      }
+      
+      if (!window._fetchingAstrologyAPI[cacheKey]) {
+        window._fetchingAstrologyAPI[cacheKey] = true;
+        
+        // Dispatch fetching event
+        window.dispatchEvent(new CustomEvent('planetary_positions_fetching'));
+        
+        fetchPlanetaryData(profile)
+          .then(data => {
+            if (data && Array.isArray(data)) {
+              localStorage.setItem(cacheKey, JSON.stringify(data));
+              // Dispatch event to notify React components to update
+              window.dispatchEvent(new CustomEvent('planetary_positions_updated'));
+              window.dispatchEvent(new CustomEvent('planetary_positions_fetch_success'));
+            } else {
+              const errMsg = (data && (data.msg || data.error || data.message)) || 'Response from API is not a valid array.';
+              window.dispatchEvent(new CustomEvent('planetary_positions_fetch_failed', {
+                detail: String(errMsg)
+              }));
+            }
+          })
+          .catch(err => {
+            console.error('Background AstrologyAPI fetch failed:', err);
+            window.dispatchEvent(new CustomEvent('planetary_positions_fetch_failed', {
+              detail: err.message || 'Unknown network error'
+            }));
+          })
+          .finally(() => {
+            delete window._fetchingAstrologyAPI[cacheKey];
+          });
+      }
+    }
+  }
+
   return OfflineEphemeris.getPositions(birthDate, lat, lon);
 }
+
+export function getTransitPositions(dateObj, lat, lon, tzone = 5.5) {
+  if (typeof window !== 'undefined' && localStorage.getItem('use_precise_api') === 'true') {
+    // Round to nearest 5 minutes to prevent spamming background requests
+    const roundedTime = new Date(dateObj.getTime());
+    const minutes = roundedTime.getMinutes();
+    const roundedMinutes = Math.floor(minutes / 5) * 5;
+    roundedTime.setMinutes(roundedMinutes);
+    roundedTime.setSeconds(0);
+    roundedTime.setMilliseconds(0);
+
+    const year = roundedTime.getFullYear();
+    const month = String(roundedTime.getMonth() + 1).padStart(2, '0');
+    const day = String(roundedTime.getDate()).padStart(2, '0');
+    const dobStr = `${year}-${month}-${day}`;
+    
+    const hour = String(roundedTime.getHours()).padStart(2, '0');
+    const min = String(roundedTime.getMinutes()).padStart(2, '0');
+    const timeStr = `${hour}:${min}`;
+
+    const tempProfile = {
+      dob: dobStr,
+      time: timeStr,
+      lat,
+      lon,
+      tzone
+    };
+
+    return getPositionsForProfile(tempProfile);
+  }
+
+  // Fallback to exact time offline positions
+  return OfflineEphemeris.getPositions(dateObj, lat, lon);
+}
+
+// ============================================================================
+// ⚖️ B.V. RAMAN FUNCTIONAL DIGNITY ENGINE
+// ============================================================================
+
+export const getBVRamanFunctionalDignity = (planetName, lagnaName) => {
+  // BV Raman's precise functional dignity table accounting for double-lordship
+  const dignityTable = {
+    Sun: {
+      Benefic: ['Leo', 'Taurus', 'Aquarius', 'Scorpio', 'Aries', 'Sagittarius'],
+      Neutral: ['Cancer', 'Virgo', 'Capricorn'],
+      Malefic: ['Gemini', 'Pisces', 'Libra']
+    },
+    Moon: {
+      Benefic: ['Cancer', 'Pisces', 'Scorpio'],
+      Neutral: ['Gemini', 'Leo', 'Sagittarius'],
+      Malefic: ['Taurus', 'Aquarius', 'Virgo', 'Aries', 'Capricorn', 'Libra']
+    },
+    Mars: {
+      Benefic: ['Aries', 'Libra', 'Pisces', 'Aquarius', 'Leo', 'Cancer', 'Sagittarius', 'Taurus'],
+      Neutral: ['Scorpio'],
+      Malefic: ['Virgo', 'Capricorn', 'Gemini']
+    },
+    Mercury: {
+      Benefic: ['Taurus', 'Capricorn', 'Libra'],
+      Neutral: ['Gemini', 'Virgo', 'Aquarius'],
+      Malefic: ['Cancer', 'Pisces', 'Sagittarius', 'Scorpio', 'Leo', 'Aries']
+    },
+    Jupiter: {
+      Benefic: ['Scorpio', 'Cancer', 'Aries'],
+      Neutral: ['Sagittarius', 'Pisces', 'Leo'],
+      Malefic: ['Aquarius', 'Libra', 'Capricorn', 'Virgo', 'Gemini', 'Taurus']
+    },
+    Venus: {
+      Benefic: ['Libra', 'Virgo', 'Aquarius', 'Capricorn', 'Gemini'],
+      Neutral: ['Taurus'],
+      Malefic: ['Aries', 'Pisces', 'Leo', 'Cancer', 'Sagittarius', 'Scorpio']
+    },
+    Saturn: {
+      Benefic: ['Capricorn', 'Aquarius', 'Libra', 'Taurus'],
+      Neutral: ['Scorpio', 'Virgo', 'Leo', 'Cancer'],
+      Malefic: ['Sagittarius', 'Pisces', 'Gemini', 'Aries']
+    }
+  };
+
+  const planetRules = dignityTable[planetName];
+  
+  // Rahu and Ketu generally follow the lord of the sign they are in, 
+  // but for strict functional arrays, we default them to Malefic unless specified otherwise elsewhere.
+  if (!planetRules) return 'Malefic'; 
+
+  if (planetRules.Benefic.includes(lagnaName)) return 'Benefic';
+  if (planetRules.Malefic.includes(lagnaName)) return 'Malefic';
+  return 'Neutral';
+};
 
 // ==========================================
 // MODULE 2: DATA HANDLER, LORE & INTERPRETATION ENGINE
@@ -277,6 +506,8 @@ export const AstroEngine = {
   calculateShadbala,
 
   calculateYogas,
+  calculateSpiritualYogas,
+  getBVRamanFunctionalDignity,
 
   VEDIC_LORE: {
     planets: { Sun: "Soul, Ego, Father, Authority.", Moon: "Mind, Emotions, Mother, Comfort.", Mars: "Energy, Action, Courage, Siblings.", Mercury: "Intellect, Speech, Communication.", Jupiter: "Wisdom, Wealth, Optimism, Children.", Venus: "Love, Luxury, Arts, Marriage.", Saturn: "Karma, Discipline, Hard Work.", Rahu: "Worldly Desires, Illusion.", Ketu: "Spirituality, Detachment." },

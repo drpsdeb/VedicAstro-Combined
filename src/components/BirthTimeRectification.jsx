@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Sparkles, Clock, Star, AlertTriangle, BarChart2, Compass, ShieldAlert, Calendar, Plus, Trash2, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
+import { Sparkles, Clock, Star, AlertTriangle, BarChart2, Compass, ShieldAlert, Calendar, Plus, Trash2, TrendingUp, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { getRectifiedChartData, detectVargaChanges } from '../utils/BirthTimeRectification';
 import { getD9RasiIndex, AstroEngine } from '../utils/ephemerisEngine';
 import { calculateYogas } from '../utils/yoga';
 import { validateRectification, EVENT_SIGNIFICATIONS } from '../utils/RectificationValidator';
 import BTRChart from './BTRChart';
+import PreciseCalculationToggle from './PreciseCalculationToggle';
 
 // Rasi Names formatted nicely
 const rasiNames = [
@@ -76,9 +77,28 @@ const classifyYogas = (yList) => {
   return Object.values(categories).filter(cat => cat.yogas.length > 0);
 };
 
-export default function BirthTimeRectification({ birthProfile, onSymbolClick, onUpdateProfileEvents }) {
+export default function BirthTimeRectification({ birthProfile, onSymbolClick, onUpdateProfileEvents, onBack }) {
   const [timeDelta, setTimeDelta] = useState(0);
   const [saveStatus, setSaveStatus] = useState('');
+
+  // Track calculation engine toggle state dynamically
+  const [preciseToggle, setPreciseToggle] = useState(() => localStorage.getItem('use_precise_api') === 'true');
+  const [calcTrigger, setCalcTrigger] = useState(0);
+  useEffect(() => {
+    const handleToggle = () => {
+      setPreciseToggle(localStorage.getItem('use_precise_api') === 'true');
+      setCalcTrigger(prev => prev + 1);
+    };
+    const handleUpdate = () => {
+      setCalcTrigger(prev => prev + 1);
+    };
+    window.addEventListener('api_toggle_changed', handleToggle);
+    window.addEventListener('planetary_positions_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('api_toggle_changed', handleToggle);
+      window.removeEventListener('planetary_positions_updated', handleUpdate);
+    };
+  }, []);
 
   // Form states for adding events
   const [newEventDate, setNewEventDate] = useState('');
@@ -174,12 +194,12 @@ export default function BirthTimeRectification({ birthProfile, onSymbolClick, on
   // Original birth chart (0 delta)
   const originalChart = useMemo(() => {
     return getRectifiedChartData(birthProfile, 0);
-  }, [birthProfile]);
+  }, [birthProfile, preciseToggle, calcTrigger]);
 
   // Rectified birth chart
   const rectifiedChart = useMemo(() => {
     return getRectifiedChartData(birthProfile, timeDelta);
-  }, [birthProfile, timeDelta]);
+  }, [birthProfile, timeDelta, preciseToggle, calcTrigger]);
 
   // Detect Lagna and Navamsa changes
   const vargaChanges = useMemo(() => {
@@ -212,7 +232,7 @@ export default function BirthTimeRectification({ birthProfile, onSymbolClick, on
       }
     }
     return points;
-  }, [birthProfile, lifeEvents]);
+  }, [birthProfile, lifeEvents, preciseToggle, calcTrigger]);
 
   // Sync precomputed points with history
   useEffect(() => {
@@ -401,22 +421,32 @@ export default function BirthTimeRectification({ birthProfile, onSymbolClick, on
   return (
     <div className="flex flex-col gap-6 p-6 bg-gradient-to-br from-[#fdfde8] to-[#fbfbf0] border border-amber-200 rounded-2xl shadow-xl w-full max-w-4xl mx-auto my-4 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-amber-800/10 pb-4">
-        <div>
-          <h2 className="text-xl font-bold font-serif text-amber-950 flex items-center gap-2">
-            <Clock className="text-amber-600 animate-pulse" size={22} />
-            Birth Time Rectification (BTR)
-            {birthProfile?.name && (
-              <span className="text-sm font-sans font-semibold text-amber-700 bg-amber-100/65 px-2.5 py-0.5 rounded-lg border border-amber-200 ml-1 animate-in fade-in zoom-in duration-200">
-                for {birthProfile.name}
-              </span>
-            )}
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">Adjust birth time dynamically (+/- 60 mins) to identify changes in planetary structures, Lagna, and Navamsa.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-amber-800/10 pb-4 gap-4">
+        <div className="flex items-center gap-3 text-left">
+          {onBack && (
+            <button onClick={onBack} className="p-1.5 hover:bg-amber-100/50 rounded-lg text-amber-900 transition-colors border border-amber-200/50" title="Back to Dashboard">
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <div>
+            <h2 className="text-xl font-bold font-serif text-amber-950 flex flex-wrap items-center gap-2">
+              <Clock className="text-amber-600 animate-pulse animate-duration-1000" size={22} />
+              <span>Birth Time Rectification (BTR)</span>
+              {birthProfile?.name && (
+                <span className="text-sm font-sans font-semibold text-amber-700 bg-amber-100/65 px-2.5 py-0.5 rounded-lg border border-amber-200 ml-1 animate-in fade-in zoom-in duration-200">
+                  for {birthProfile.name}
+                </span>
+              )}
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Adjust birth time dynamically (+/- 60 mins) to identify changes in planetary structures, Lagna, and Navamsa.</p>
+          </div>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-          Live Rectifier
-        </span>
+        <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+          <PreciseCalculationToggle />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+            Live Rectifier
+          </span>
+        </div>
       </div>
 
       {/* Unified Control Dashboard */}

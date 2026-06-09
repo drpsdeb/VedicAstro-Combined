@@ -6,7 +6,7 @@ import React, { useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, onSnapshot } from 'firebase/firestore';
 
-export default function ProfileManager({ appId = 'vedic-astro-live', auth, db, onUserChanged, onProfilesSynced }) {
+export default function ProfileManager({ appId = 'vedic-astro-live', auth, db, onUserChanged, onProfilesSynced, onSyncError }) {
 
   useEffect(() => {
     if (!auth) {
@@ -26,7 +26,7 @@ export default function ProfileManager({ appId = 'vedic-astro-live', auth, db, o
       if (!currentUser || !db || !appId) return;
 
       const profilesRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'profiles');
-      console.log("🌌 Firebase Sync Activated: Attaching real-time profile listeners...");
+      console.log(`🌌 Firebase Sync Activated: Attaching real-time profile listeners for UID: ${currentUser.uid} (Anonymous: ${currentUser.isAnonymous})`);
 
       unsubscribeSnapshot = onSnapshot(profilesRef,
         (snapshot) => {
@@ -41,6 +41,7 @@ export default function ProfileManager({ appId = 'vedic-astro-live', auth, db, o
         },
         (error) => {
           console.error("❌ Firestore Sync Error:", error);
+          if (onSyncError) onSyncError(error);
         }
       );
     });
@@ -49,7 +50,7 @@ export default function ProfileManager({ appId = 'vedic-astro-live', auth, db, o
       if (unsubscribeSnapshot) unsubscribeSnapshot();
       unsubscribeAuth();
     };
-  }, [auth, db, appId, onUserChanged, onProfilesSynced]);
+  }, [auth, db, appId, onUserChanged, onProfilesSynced, onSyncError]);
 
   return null; // This component operates strictly as a background data pipeline
 }
